@@ -1,0 +1,142 @@
+<div class="test-page">
+  <div class="container">
+    <div class="test-header">
+      <h1>Test sở thích nghề nghiệp</h1>
+    </div>
+
+    <section class="question-section" id="questionSection">
+      <div class="progress-card premium">
+        <div class="progress-top">
+          <div class="active-plan">
+            <span class="active-plan-chip">Đang dùng</span>
+            <strong>{{ activePlanLabel }}</strong>
+          </div>
+
+          <div class="page-indicator">
+            Trang {{ currentPage }} / {{ totalPages }}
+          </div>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercent"></div>
+
+          <div
+            class="progress-cap"
+            *ngIf="progressPercent > 0"
+            [style.left.%]="progressPercent"
+          >
+            ⭐
+          </div>
+        </div>
+      </div>
+
+      <div class="question-card skeleton-card" *ngIf="loadingQuestions && questions.length === 0">
+        <div class="skeleton-item" *ngFor="let item of [1,2,3]">
+          <div class="skeleton-meta"></div>
+          <div class="skeleton-title"></div>
+          <div class="skeleton-title short"></div>
+
+          <div class="answer-grid">
+            <div class="skeleton-answer"></div>
+            <div class="skeleton-answer"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="question-card soft-loading-card" *ngIf="loadingQuestions && questions.length > 0">
+        <p class="soft-loading-text">Đang cập nhật bộ câu hỏi mới...</p>
+      </div>
+
+      <div class="question-card" *ngIf="!loadingQuestions && !!questionsError">
+        <p class="page-error page-error-center">{{ questionsError }}</p>
+
+        <div class="retry-wrap">
+          <button
+            type="button"
+            class="pager-btn pager-primary"
+            (click)="loadPlusQuestions()"
+          >
+            Tải lại câu hỏi
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="questionCardTop"
+        class="question-card"
+        *ngIf="!questionsError && questions.length > 0"
+      >
+        <div
+            *ngFor="let q of pagedQuestions; let i = index; trackBy: trackQuestion"
+            class="question-item"
+            [id]="'interest-question-' + q.id"
+            [class.first-question-item]="i === 0"
+          >
+          <div class="question-meta">
+            <span class="question-id">Câu {{ getQuestionDisplayNumber(i) }}</span>
+          </div>
+
+          <h3>
+            {{ q.question }}
+            <span class="required-star">*</span>
+          </h3>
+
+          <div class="answer-grid">
+            <button
+              type="button"
+              class="answer-btn"
+              [class.selected]="isSelected(q.id, 'A')"
+              (click)="selectAnswer(q.id, 'A')"
+            >
+              <span class="answer-label">A</span>
+              <span class="answer-text">{{ q.optionA }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="answer-btn"
+              [class.selected]="isSelected(q.id, 'B')"
+              (click)="selectAnswer(q.id, 'B')"
+            >
+              <span class="answer-label">B</span>
+              <span class="answer-text">{{ q.optionB }}</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="page-error" *ngIf="pageError">
+          {{ pageError }}
+        </p>
+
+        <div class="pager">
+          <button
+            type="button"
+            class="pager-btn pager-secondary"
+            (click)="prevPage()"
+            [disabled]="currentPage === 1"
+          >
+            Quay lại
+          </button>
+
+          <button
+            *ngIf="currentPage < totalPages"
+            type="button"
+            class="pager-btn pager-primary"
+            (click)="nextPage()"
+          >
+            Tiếp theo
+          </button>
+
+          <button
+            *ngIf="currentPage === totalPages"
+            type="button"
+            class="pager-btn pager-submit"
+            (click)="submit()"
+          >
+            Nộp bài
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,202 @@
+<div class="result-page">
+  <div class="container">
+    <div class="result-card" *ngIf="result; else noResult">
+      <section class="hero-section">
+        <div class="hero-text">
+          <p class="eyebrow">KẾT QUẢ MBTI CƠ BẢN</p>
+          <h1>{{ title }} ({{ typeCode }})</h1>
+          <p class="lead">{{ description }}</p>
+
+          <div class="hero-actions">
+            <a routerLink="/mbti-test" class="btn-light">Làm lại bài test</a>
+            <a routerLink="/" class="btn-primary">Về trang chủ</a>
+          </div>
+        </div>
+
+          <div class="type-emoji-box">
+            <img
+              [src]="'/images/emoji2/' + typeCode + '.png'"
+              [alt]="typeCode"
+            />
+          </div>
+      </section>
+
+      <section class="content-grid" [class.basic-only]="isFreeUser">
+        <div class="main-column">
+          <div class="block">
+            <h2>Phân tích tính cách</h2>
+            <p>{{ description }}</p>
+          </div>
+
+          <div class="block" *ngIf="!isFreeUser">
+            <h2>Điểm mạnh nổi bật</h2>
+            <div class="strength-list">
+              <div class="strength-item" *ngFor="let item of strengths">
+                {{ item }}
+              </div>
+            </div>
+          </div>
+
+          <div class="block" *ngIf="!isFreeUser">
+            <h2>Biểu đồ trục tính cách</h2>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>E - Hướng ngoại</span>
+                <strong>{{ ePercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-blue">
+                <div class="trait-fill" [style.width.%]="ePercent"></div>
+              </div>
+            </div>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>I - Hướng nội</span>
+                <strong>{{ iPercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-indigo">
+                <div class="trait-fill" [style.width.%]="iPercent"></div>
+              </div>
+            </div>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>S - Giác quan</span>
+                <strong>{{ sPercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-green">
+                <div class="trait-fill" [style.width.%]="sPercent"></div>
+              </div>
+            </div>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>N - Trực giác</span>
+                <strong>{{ nPercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-mint">
+                <div class="trait-fill" [style.width.%]="nPercent"></div>
+              </div>
+            </div>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>T - Lý trí</span>
+                <strong>{{ tPercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-peach">
+                <div class="trait-fill" [style.width.%]="tPercent"></div>
+              </div>
+            </div>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>F - Cảm xúc</span>
+                <strong>{{ fPercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-pink">
+                <div class="trait-fill" [style.width.%]="fPercent"></div>
+              </div>
+            </div>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>J - Nguyên tắc</span>
+                <strong>{{ jPercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-lavender">
+                <div class="trait-fill" [style.width.%]="jPercent"></div>
+              </div>
+            </div>
+
+            <div class="trait">
+              <div class="trait-head">
+                <span>P - Linh hoạt</span>
+                <strong>{{ pPercent }}%</strong>
+              </div>
+              <div class="trait-bar pastel-yellow">
+                <div class="trait-fill" [style.width.%]="pPercent"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="block" *ngIf="!isFreeUser">
+            <h2>Gợi ý cách học phù hợp</h2>
+            <p>{{ studySuggestion }}</p>
+          </div>
+
+          <div class="block premium-note" *ngIf="isFreeUser">
+            <h2>Mở rộng kết quả</h2>
+            <p>
+              Bạn đang dùng tài khoản free nên hiện chỉ xem được thông tin cơ bản.
+              Hãy nâng cấp gói để mở khóa biểu đồ tính cách, gợi ý cách học,
+              ngành học gợi ý và trường tham khảo.
+            </p>
+          </div>
+        </div>
+
+        <aside class="side-column">
+          <ng-container *ngIf="isFreeUser; else premiumSidebar">
+            <div class="block">
+              <h2>Điểm mạnh nổi bật</h2>
+              <div class="strength-list">
+                <div class="strength-item" *ngFor="let item of strengths">
+                  {{ item }}
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #premiumSidebar>
+            <div class="side-card">
+              <h3>Gói nâng cao</h3>
+              <div class="upgrade-tags">
+                <span class="upgrade-tag" [class.active]="upgrades.interest">
+                  {{ upgrades.interest ? 'Đã mở khóa: Test sở thích' : 'Chưa mở khóa: Test sở thích' }}
+                </span>
+
+                <span class="upgrade-tag" [class.active]="upgrades.ability">
+                  {{ upgrades.ability ? 'Đã mở khóa: Test năng lực' : 'Chưa mở khóa: Test năng lực' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="side-card">
+              <h3>Ngành học gợi ý</h3>
+              <div class="tag-list">
+                <span class="chip" *ngFor="let major of recommendedMajors">{{ major }}</span>
+              </div>
+            </div>
+
+            <div class="side-card">
+              <h3>Trường tham khảo</h3>
+              <div class="school-list">
+                <div class="school-item" *ngFor="let school of suggestedSchools">
+                  <strong>{{ school.name }}</strong>
+                  <span>{{ school.major }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="side-card premium-note">
+              <h3>Mở rộng kết quả</h3>
+              <p>
+                Nâng cấp gói sở thích để xem biểu đồ sở thích, phân tích xu hướng nổi trội,
+                gợi ý ngành nghề phù hợp và top trường tuyển sinh liên quan.
+              </p>
+            </div>
+          </ng-template>
+        </aside>
+      </section>
+    </div>
+
+    <ng-template #noResult>
+      <div class="result-card empty-card">
+        <h2>Chưa có kết quả</h2>
+        <p>Bạn hãy hoàn thành bài trắc nghiệm trước.</p>
+        <a routerLink="/mbti-test" class="btn-primary">Làm bài test</a>
+      </div>
+    </ng-template>
+  </div>
+</div>

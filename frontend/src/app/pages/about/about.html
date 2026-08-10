@@ -1,0 +1,89 @@
+<div class="about-page">
+  <div class="container">
+    <div class="about-feedback about-feedback--loading" *ngIf="loading">
+      Đang tải nội dung trang Về chúng tôi...
+    </div>
+
+    <div class="about-feedback about-feedback--error" *ngIf="!loading && errorMessage">
+      {{ errorMessage }}
+    </div>
+  </div>
+
+  <ng-container *ngIf="!loading && !errorMessage">
+    <section class="about-hero reveal-item">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <h1>{{ heroTitle }}</h1>
+          <p>{{ shortDescription }}</p>
+
+          <div class="hero-actions">
+            <a routerLink="/mbti-test" class="btn-primary">Bắt đầu bài test</a>
+            <a href="#intro" class="btn-light">Khám phá thêm</a>
+          </div>
+        </div>
+
+        <div class="hero-image">
+          <img
+            src="/images/Logonew.png"
+            [alt]="heroTitle"
+            class="hero-logo"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section id="intro" class="about-section reveal-item">
+      <div class="container section-card">
+        <h2>Giới thiệu về NAVI</h2>
+
+        <p *ngIf="fullDescriptionParts.length === 0">
+          NAVI được xây dựng với mong muốn giúp học sinh, sinh viên và những người đang tìm kiếm định hướng nghề nghiệp có thêm cơ sở để đưa ra quyết định phù hợp với bản thân.
+          Thông qua việc kết hợp bài đánh giá tính cách MBTI, sở thích và năng lực cá nhân, hệ thống cung cấp các gợi ý về ngành học, trường đào tạo và những định hướng phát triển phù hợp với từng người dùng.
+          Bên cạnh đó, NAVI còn cung cấp thông tin tuyển sinh, khóa học và các phân tích hỗ trợ nhằm giúp người dùng có cái nhìn rõ ràng hơn về con đường học tập và phát triển trong tương lai.
+          Chúng tôi tin rằng mỗi người đều có những điểm mạnh riêng và xứng đáng được định hướng theo cách phù hợp nhất với chính mình.
+        </p>
+
+        <p *ngFor="let part of fullDescriptionParts">
+          {{ part }}
+        </p>
+      </div>
+    </section>
+
+    <section id="mission" class="about-section reveal-item">
+      <div class="container split-grid">
+        <article class="info-card">
+          <h2>{{ missionTitle }}</h2>
+          <p>{{ missionDescription }}</p>
+        </article>
+
+        <article class="info-card">
+          <h2>{{ visionTitle }}</h2>
+          <p>{{ visionDescription }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="privacy" class="about-section reveal-item">
+      <div class="container section-card privacy-card">
+        <h2>Chính sách bảo mật</h2>
+
+        <p class="privacy-text">
+          {{ setting.privacy_policy || privacyPolicy }}
+        </p>
+      </div>
+    </section>
+
+    <section class="contact-section reveal-item">
+      <div class="container contact-card">
+        <div>
+          <h2>Khám phá bản thân cùng NAVI</h2>
+          <p>
+            Làm bài test để xem nhóm tính cách, ngành nghề và trường học phù hợp với bạn.
+          </p>
+        </div>
+
+        <a routerLink="/mbti-test" class="btn-primary">Làm bài test</a>
+      </div>
+    </section>
+  </ng-container>
+</div>

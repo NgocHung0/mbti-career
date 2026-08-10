@@ -1,0 +1,319 @@
+<div class="courses-page">
+  <div class="page-head">
+    <div class="page-head__left">
+      <h1>Khóa học</h1>
+      <p>
+        Quản lý danh sách khóa học và nội dung bài học của từng khóa.
+      </p>
+    </div>
+  </div>
+
+  <div class="alert-stack" *ngIf="successMessage() || errorMessage()">
+    <div class="alert alert--success" *ngIf="successMessage()">
+      {{ successMessage() }}
+    </div>
+    <div class="alert alert--error" *ngIf="errorMessage()">
+      {{ errorMessage() }}
+    </div>
+  </div>
+
+  <section class="toolbar-card">
+    <div class="toolbar">
+      <div class="toolbar__search">
+        <input
+          #keywordInput
+          type="text"
+          class="search-input"
+          placeholder="Tìm theo tên, ngành nghề, mô tả..."
+          [value]="keyword()"
+          (input)="setKeyword(keywordInput.value)"
+        />
+      </div>
+
+      <div class="toolbar__meta">
+        <span class="result-count">{{ filteredCourses().length }} khóa học</span>
+
+        <button type="button" class="btn btn--primary" (click)="openCreateModal()">
+          Thêm khóa học
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="table-card">
+    <div class="table-card__header">
+      <div>
+        <h2>Danh sách khóa học</h2>
+        <p>Hiển thị 10 khóa học mỗi trang.</p>
+      </div>
+    </div>
+
+    <div class="table-wrap" *ngIf="!loading(); else loadingBlock">
+      <table class="courses-table" *ngIf="paginatedCourses().length; else emptyBlock">
+        <thead>
+          <tr>
+            <th style="width: 72px;">STT</th>
+            <th>Khóa học</th>
+            <th style="width: 180px;">Ngành nghề</th>
+            <th style="width: 120px;">Hiển thị</th>
+            <th style="width: 130px;">Nổi bật</th>
+            <th style="width: 280px;">Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of paginatedCourses(); let i = index; trackBy: trackById">
+            <td class="index-col">{{ ((currentPage() - 1) * pageSize) + i + 1 }}</td>
+
+            <td>
+              <div class="course-cell">
+                <ng-container *ngIf="resolveThumbnail(item.thumbnail) && !isBrokenImage(item.id); else thumbFallback">
+                  <div class="course-thumb">
+                    <img
+                      [src]="resolveThumbnail(item.thumbnail)"
+                      [alt]="item.name"
+                      loading="lazy"
+                      (error)="markBrokenImage(item.id)"
+                    />
+                  </div>
+                </ng-container>
+
+                <ng-template #thumbFallback>
+                  <div class="course-thumb course-thumb--fallback">
+                    {{ (item.name || 'K').charAt(0) }}
+                  </div>
+                </ng-template>
+
+                <div class="course-info">
+                  <h3>{{ item.name }}</h3>
+                  <p *ngIf="item.short_description">{{ item.short_description }}</p>
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <span class="tag-chip">{{ item.course_major || 'Chưa chọn' }}</span>
+            </td>
+
+            <td>
+              <span
+                class="status-pill"
+                [class.is-active]="item.is_active"
+                [class.is-inactive]="!item.is_active"
+              >
+                {{ item.is_active ? 'Đang bật' : 'Đã ẩn' }}
+              </span>
+            </td>
+
+            <td>
+              <span class="status-pill status-pill--soft" [class.is-featured]="item.is_featured">
+                {{ item.is_featured ? 'Nổi bật' : 'Thường' }}
+              </span>
+            </td>
+
+            <td>
+              <div class="action-stack">
+                <button
+                  type="button"
+                  class="btn btn--content"
+                  (click)="manageLessons(item)"
+                  title="Quản lý bài học và nội dung khóa học"
+                >
+                  Quản lý nội dung
+                </button>
+
+                <div class="action-row">
+                  <button
+                    type="button"
+                    class="btn btn--ghost"
+                    (click)="openEditModal(item)"
+                    title="Sửa thông tin"
+                  >
+                    Sửa
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn--danger"
+                    (click)="remove(item)"
+                    [disabled]="deletingId() === item.id"
+                    title="Xóa mục này"
+                  >
+                    {{ deletingId() === item.id ? 'Đang xóa...' : 'Xóa' }}
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination-wrap" *ngIf="filteredCourses().length > 0">
+        <div class="pagination-summary">
+          Hiển thị {{ startItem() }} - {{ endItem() }} / {{ filteredCourses().length }} mục
+        </div>
+
+        <div class="pagination">
+          <button
+            type="button"
+            class="pagination-btn"
+            (click)="prevPage()"
+            [disabled]="currentPage() === 1"
+          >
+            Trước
+          </button>
+
+          <button
+            type="button"
+            class="pagination-btn pagination-btn--number"
+            *ngFor="let page of paginationNumbers()"
+            [class.is-active]="page === currentPage()"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            type="button"
+            class="pagination-btn"
+            (click)="nextPage()"
+            [disabled]="currentPage() === totalPages()"
+          >
+            Sau
+          </button>
+        </div>
+      </div>
+
+      <ng-template #emptyBlock>
+        <div class="empty-state">
+          <div class="empty-state__box">
+            <h3>Chưa có dữ liệu nào</h3>
+            <p>
+              Hiện chưa có khóa học nào trong hệ thống.
+            </p>
+            <button type="button" class="btn btn--primary" (click)="openCreateModal()">
+              Tạo khóa học đầu tiên
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <ng-template #loadingBlock>
+      <div class="loading-state">
+        <div class="loading-state__box">
+          <div class="spinner"></div>
+          <p>Đang tải danh sách...</p>
+        </div>
+      </div>
+    </ng-template>
+  </section>
+</div>
+
+<div class="modal-backdrop" *ngIf="showModal()" (click)="closeModal()">
+  <div class="course-modal" (click)="$event.stopPropagation()">
+    <div class="course-modal__header">
+      <div>
+        <div class="modal-kicker">Biểu mẫu khóa học</div>
+        <h2>{{ editingId() ? 'Chỉnh sửa khóa học' : 'Tạo khóa học mới' }}</h2>
+        <p>
+          Điền thông tin cơ bản của khóa học. Phần bài học và bài tập sẽ được quản
+          lý riêng trong nội dung khóa học.
+        </p>
+      </div>
+
+      <button type="button" class="modal-close" (click)="closeModal()" [disabled]="saving()">
+        ×
+      </button>
+    </div>
+
+    <form class="course-form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-grid">
+        <div class="form-field form-field--full">
+          <label for="name">Tên khóa học</label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            placeholder="Ví dụ: Lập trình Web cho người mới bắt đầu"
+          />
+          <div class="field-error" *ngIf="form.controls.name.touched && form.controls.name.invalid">
+            Vui lòng nhập tên khóa học.
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="course_major">Ngành nghề</label>
+
+            <ng-select
+              id="course_major"
+              [items]="majorOptions"
+              formControlName="course_major"
+              [searchable]="true"
+              [clearable]="true"
+              [virtualScroll]="true"
+              placeholder="Nhập hoặc chọn ngành nghề"
+              notFoundText="Không tìm thấy ngành phù hợp"
+              clearAllText="Xóa"
+            >
+            </ng-select>
+            <div
+              class="field-error"
+              *ngIf="form.controls.course_major.touched && form.controls.course_major.invalid"
+            >
+              Vui lòng chọn ngành nghề.
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="thumbnail">Ảnh đại diện (URL)</label>
+          <input id="thumbnail" type="text" formControlName="thumbnail" placeholder="https://... hoặc /storage/..." />
+        </div>
+
+        <div class="form-field form-field--full">
+          <label for="short_description">Mô tả ngắn</label>
+          <textarea
+            id="short_description"
+            rows="3"
+            formControlName="short_description"
+            placeholder="Mô tả ngắn gọn để hiển thị ở danh sách khóa học"
+          ></textarea>
+        </div>
+
+        <div class="form-field form-field--full">
+          <label for="description">Mô tả chi tiết</label>
+          <textarea
+            id="description"
+            rows="5"
+            formControlName="description"
+            placeholder="Giới thiệu đầy đủ hơn về khóa học"
+          ></textarea>
+        </div>
+
+        <div class="form-field form-field--inline">
+          <label class="switch-row">
+            <input type="checkbox" formControlName="is_active" />
+            <span>Hiển thị khóa học</span>
+          </label>
+        </div>
+
+        <div class="form-field form-field--inline">
+          <label class="switch-row">
+            <input type="checkbox" formControlName="is_featured" />
+            <span>Đánh dấu nổi bật</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="course-modal__footer">
+        <button type="button" class="btn btn--light" (click)="closeModal()" [disabled]="saving()">
+          Hủy
+        </button>
+
+        <button type="submit" class="btn btn--primary" [disabled]="saving()">
+          {{ saving() ? 'Đang lưu...' : (editingId() ? 'Lưu thay đổi' : 'Tạo khóa học') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,371 @@
+<div class="admissions-admin">
+  <div class="header-bar">
+    <div>
+      <h2>Quản lý tuyển sinh</h2>
+      <p>Thêm, sửa, xóa thông tin tuyển sinh trên hệ thống.</p>
+    </div>
+
+    <button type="button" class="btn btn-primary" (click)="openCreate()">
+      Thêm tuyển sinh
+    </button>
+  </div>
+
+  <div class="toolbar-card">
+    <div class="toolbar">
+      <!-- Ô tìm kiếm -->
+      <input
+        type="text"
+        [(ngModel)]="keyword"
+        (ngModelChange)="onSearchChange()"
+        (keyup.enter)="search()"
+        autocomplete="off"
+        placeholder="Tìm theo trường, ngành, thành phố..."
+      />
+
+      <!-- Bộ lọc trạng thái -->
+      <select
+        [(ngModel)]="statusFilter"
+        (change)="onChangeFilter()"
+      >
+        <option value="all">Tất cả trạng thái</option>
+        <option value="coming_soon">Sắp mở</option>
+        <option value="open">Đang mở</option>
+        <option value="closed">Đã đóng</option>
+      </select>
+
+      <!-- Nút tìm kiếm -->
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="search()"
+      >
+        Tìm kiếm
+      </button>
+    </div>
+  </div>
+
+  <div class="state-box" *ngIf="loading">Đang tải dữ liệu...</div>
+  <div class="state-box error" *ngIf="!loading && error">{{ error }}</div>
+
+  <div class="table-card" *ngIf="!loading && !error">
+    <div class="table-header">
+      <h3>Danh sách tuyển sinh</h3>
+      <span>{{ total }} mục</span>
+    </div>
+
+    <div class="table-wrap" *ngIf="filteredItems.length > 0; else emptyTpl">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 70px;">Hiện</th>
+            <th style="width: 70px;">#</th>
+            <th>Trường / Ngành</th>
+            <th style="width: 180px;">Thành phố</th>
+            <th style="width: 160px;">Trạng thái</th>
+            <th style="width: 170px;">Hạn nộp</th>
+            <th style="width: 210px;">Hạn chót nộp hồ sơ</th>
+            <th style="width: 170px;">Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredItems; let i = index; trackBy: trackById">
+            <td class="visible-cell">
+              <input
+                type="checkbox"
+                [checked]="item.is_active"
+                [disabled]="togglingId === item.id"
+                (change)="toggleVisible(item)"
+              />
+            </td>
+
+            <td>{{ (currentPage - 1) * perPage + i + 1 }}</td>
+
+            <td>
+              <div class="info-cell">
+                <div class="thumb" *ngIf="item.image_url; else noImg">
+                  <img [src]="item.image_url!" [alt]="item.major_name" />
+                </div>
+
+                <ng-template #noImg>
+                  <div class="thumb thumb-empty">Ảnh</div>
+                </ng-template>
+
+                <div class="text">
+                  <div class="school">{{ item.school_name }}</div>
+                  <div class="major">{{ item.major_name }}</div>
+                </div>
+              </div>
+            </td>
+
+            <td>{{ item.city || '—' }}</td>
+
+            <td>
+              <span class="badge status" [ngClass]="item.status">
+                {{ getStatusLabel(item.status) }}
+              </span>
+            </td>
+
+            <td>{{ getDeadlineStart(item.application_deadline) }}</td>
+            <td>{{ getDeadlineEnd(item.application_deadline) }}</td>
+
+            <td>
+              <div class="actions">
+                <button type="button" class="btn btn-edit" (click)="openEdit(item)">
+                  Sửa
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-delete"
+                  (click)="remove(item)"
+                  [disabled]="deletingId === item.id"
+                >
+                  {{ deletingId === item.id ? 'Đang xóa...' : 'Xóa' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyTpl>
+      <div class="empty-box">Chưa có dữ liệu tuyển sinh.</div>
+    </ng-template>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+        Trước
+      </button>
+
+      <button
+        type="button"
+        *ngFor="let page of pages"
+        (click)="page !== '...' && changePage(page)"
+        [class.active]="page === currentPage"
+        [disabled]="page === '...'"
+        [class.ellipsis]="page === '...'"
+      >
+        {{ page }}
+      </button>
+
+      <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages">
+        Sau
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-wrap" *ngIf="showModal">
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div>
+        <h3>{{ editingId ? 'Cập nhật tuyển sinh' : 'Thêm tuyển sinh' }}</h3>
+        <p>Nhập đầy đủ thông tin để lưu dữ liệu.</p>
+      </div>
+
+      <button type="button" class="modal-close" (click)="closeModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tên trường</label>
+          <input type="text" [(ngModel)]="form.school_name" />
+        </div>
+
+        <div class="form-group">
+          <label>Tên ngành</label>
+          <input type="text" [(ngModel)]="form.major_name" />
+        </div>
+
+        <div class="form-group">
+          <label>Thành phố</label>
+          <select [(ngModel)]="form.city">
+            <option *ngFor="let city of cityOptions" [value]="city">{{ city }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Trạng thái</label>
+          <select
+            [(ngModel)]="form.status"
+            (ngModelChange)="onStatusChange()"
+          >
+            <option value="coming_soon">Sắp mở</option>
+            <option value="open">Đang mở</option>
+            <option value="closed">Đã đóng</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Nổi bật</label>
+
+          <label class="featured-checkbox">
+            <input
+              type="checkbox"
+              [(ngModel)]="form.featured"
+            />  
+            <span>Ưu tiên hiển thị trong kết quả</span>
+          </label>
+        </div>
+
+        <div class="form-group full">
+          <label>Mô tả ngắn</label>
+          <textarea rows="4" [(ngModel)]="form.short_description"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Khoảng học phí</label>
+          <input
+            type="text"
+            [(ngModel)]="form.tuition_fee"
+            placeholder="Ví dụ: 10 - 15 triệu / năm"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Số tín chỉ</label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            [(ngModel)]="form.credit_count"
+            placeholder="Ví dụ: 120"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Bằng cấp</label>
+          <input
+            type="text"
+            [(ngModel)]="form.degree"
+            placeholder="Ví dụ: Kỹ sư, Cử nhân"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Thứ tự hiển thị</label>
+          <input
+            type="number"
+            [(ngModel)]="form.sort_order"
+          />
+        </div>
+
+        <div class="form-group full">
+          <label>Tags</label>
+          <input
+            type="text"
+            [(ngModel)]="form.tags"
+            placeholder="Ví dụ: CNTT, AI, Phần mềm"
+          />
+        </div>
+
+        <div class="form-group full">
+          <label>Phương thức xét tuyển</label>
+
+          <div class="method-grid">
+            <label class="method-item">
+              <input type="checkbox" [(ngModel)]="form.method_hoc_ba" />
+              <span>Xét tuyển học bạ</span>
+            </label>
+
+            <label class="method-item">
+              <input type="checkbox" [(ngModel)]="form.method_thpt" />
+              <span>THPT Quốc gia</span>
+            </label>
+
+            <label class="method-item">
+              <input type="checkbox" [(ngModel)]="form.method_dgnl" />
+              <span>Đánh giá năng lực</span>
+            </label>
+
+            <label class="method-item">
+              <input type="checkbox" [(ngModel)]="form.method_xettuyen_rieng" />
+              <span>Xét tuyển riêng</span>
+            </label>
+          </div>
+
+          <input
+            type="text"
+            [(ngModel)]="form.custom_methods"
+            placeholder="Nhập thêm phương thức khác, cách nhau bằng dấu phẩy"
+          />
+        </div>
+
+        <ng-container *ngIf="form.status !== 'closed' && showDeadlineInputs">
+          <div class="form-group">
+            <label>Hạn nộp từ ngày</label>
+            <input
+              type="date"
+              [(ngModel)]="form.deadline_start"
+              [min]="getDateMin()"
+              (ngModelChange)="onDeadlineStartChange()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Hạn chót nộp hồ sơ</label>
+            <input
+              type="date"
+              [(ngModel)]="form.deadline_end"
+              [min]="form.status === 'coming_soon' ? (form.deadline_start || todayDate()) : null"
+              (ngModelChange)="onDeadlineEndChange()"
+            />
+          </div>
+        </ng-container>
+
+        <div class="form-group">
+          <label>Link đăng ký</label>
+          <input type="text" [(ngModel)]="form.register_link" />
+        </div>
+
+        <div class="form-group">
+          <label>Số điện thoại</label>
+          <input type="text" [(ngModel)]="form.contact_phone" />
+        </div>
+
+        <div class="form-group">
+          <label>Email liên hệ</label>
+          <input type="email" [(ngModel)]="form.contact_email" />
+        </div>
+
+        <div class="form-group full">
+          <label>Ảnh tuyển sinh</label>
+
+          <div class="upload-box">
+            <label class="upload-trigger">
+              <input type="file" accept="image/*" (change)="onFileChange($event)" />
+              <span>Chọn ảnh</span>
+            </label>
+
+            <div class="upload-meta">
+              <strong>{{ selectedImageFile?.name || 'Chưa chọn ảnh mới' }}</strong>
+              <span>PNG, JPG, JPEG, WEBP</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group full" *ngIf="previewImage">
+          <label>Xem trước ảnh</label>
+          <div class="preview-box">
+            <img [src]="previewImage" alt="preview" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button type="button" class="btn btn-ghost" (click)="closeModal()" [disabled]="saving">
+        Hủy
+      </button>
+
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Đang lưu...' : (editingId ? 'Cập nhật' : 'Tạo mới') }}
+      </button>
+    </div>
+  </div>
+</div>

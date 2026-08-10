@@ -1,0 +1,126 @@
+<div class="complete-overlay">
+  <div class="complete-popup">
+    <button
+      type="button"
+      class="popup-close"
+      (click)="closePopup()"
+      aria-label="Đóng popup"
+    >
+      ×
+    </button>
+
+    <div class="popup-head">
+      <span class="complete-badge">GÓI NÂNG CAO</span>
+      <h1>Chọn gói test nâng cao</h1>
+      <p class="complete-subtitle">
+        Chọn 1 trong các gói lấy từ API dịch vụ bên Admin trước khi xem kết quả.
+      </p>
+    </div>
+
+    <div class="state-box" *ngIf="loading()">
+      Đang tải gói dịch vụ từ API admin...
+    </div>
+
+    <div class="state-box error" *ngIf="!loading() && errorMessage()">
+      {{ errorMessage() }}
+    </div>
+
+    <div class="upgrade-grid" *ngIf="!loading() && packageOptions().length > 0">
+      <article
+        class="upgrade-card"
+        *ngFor="let item of packageOptions()"
+        [class.active]="isSelected(item.id)"
+        [class.upgrade-card--full]="item.include_ability_test"
+        (click)="selectPackage(item.id)"
+      >
+        <div class="upgrade-top">
+          <span
+            class="upgrade-badge"
+            [class.upgrade-badge--hot]="item.include_ability_test"
+          >
+            {{ getPackageTypeLabel(item) }}
+          </span>
+
+          <div class="upgrade-side">
+            <span class="upgrade-check" *ngIf="isSelected(item.id)">✓</span>
+            <span class="price-tag">{{ item.price | number:'1.0-0' }}đ</span>
+          </div>
+        </div>
+
+        <h3>{{ getPackageTitle(item) }}</h3>
+        <p class="upgrade-desc">{{ getPackageDesc(item) }}</p>
+
+        <ul class="feature-list">
+          <li *ngFor="let feature of getFeatures(item)">
+            {{ feature }}
+          </li>
+        </ul>
+
+        <div class="select-text">Chọn gói này</div>
+      </article>
+    </div>
+
+    <div class="state-box" *ngIf="!loading() && !errorMessage() && packageOptions().length === 0">
+      Hiện chưa có gói test nào đang bật bên Admin.
+    </div>
+
+    <div class="free-box" [class.active]="isSelected('free')">
+      <div class="free-box__content">
+        <span class="free-label">MIỄN PHÍ</span>
+        <h4>Xem kết quả miễn phí</h4>
+        <p>
+          Bạn vẫn có thể xem kết quả cơ bản, nhưng sẽ cần xem quảng cáo trước
+          khi mở báo cáo.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="btn-free"
+        (click)="selectPackage('free')"
+      >
+        Chọn miễn phí
+      </button>
+    </div>
+
+    <div class="action-row">
+      <button
+        type="button"
+        class="btn-result"
+        (click)="continueWithPackage()"
+      >
+        {{ isSelected('free') ? 'Xem kết quả ngay' : 'Tiếp tục với gói đã chọn' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="ad-overlay" *ngIf="showAdModal">
+    <div class="ad-card">
+      <button
+        type="button"
+        class="popup-close popup-close--inner"
+        (click)="skipAdNow()"
+        aria-label="Đóng quảng cáo"
+      >
+        ×
+      </button>
+
+      <h2>Quảng cáo tài trợ</h2>
+      <p>
+        Bạn đang xem kết quả theo gói miễn phí. Vui lòng hoàn tất lượt quảng cáo
+        mô phỏng để tiếp tục mở báo cáo.
+      </p>
+
+      <div class="ad-box">
+        <div class="ad-placeholder">
+          <strong>Nội dung quảng cáo giả lập</strong>
+          <span>Còn {{ adCountdown }} giây...</span>
+        </div>
+      </div>
+
+      <button type="button" class="btn-skip" (click)="skipAdNow()">
+        Bỏ qua
+      </button>
+    </div>
+  </div>
+</div>

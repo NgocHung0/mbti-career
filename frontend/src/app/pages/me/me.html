@@ -1,0 +1,973 @@
+<div class="me-page">
+  <div class="me-container">
+    <section class="profile-hero">
+      <div class="profile-main">
+        <label class="avatar-upload">
+          <img *ngIf="avatarUrl(); else avatarText" [src]="avatarUrl()" alt="Avatar" />
+
+          <ng-template #avatarText>
+            <span>{{ avatarLetter }}</span>
+          </ng-template>
+
+          <input type="file" accept="image/*" (change)="onAvatarSelected($event)" />
+
+          <small>{{ avatarUploading ? 'Đang tải...' : 'Đổi ảnh' }}</small>
+        </label>
+
+        <div class="profile-text">
+          <p class="eyebrow">Tài khoản cá nhân</p>
+          <h1>{{ user?.name || 'Người dùng NAVI' }}</h1>
+          <p class="email">{{ user?.email || 'Chưa có email' }}</p>
+
+          <div class="profile-badges">
+            <span
+              class="plan-pill"
+              [ngClass]="getAccountPackageClass()"
+            >
+              {{ getAccountPackageLabel() }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="accordion-card" [class.open]="showProfileEdit">
+      <button type="button" class="accordion-head" (click)="toggleProfileEdit()">
+        <div class="accordion-title">
+          <strong>Thay đổi thông tin cá nhân</strong>
+          <span>Cập nhật họ tên, email hiển thị của bạn</span>
+        </div>
+        <div class="accordion-arrow"></div>
+      </button>
+
+      <div class="accordion-body" [class.open]="showProfileEdit">
+        <div class="accordion-inner">
+          <p class="section-sub">Chỉnh sửa thông tin tài khoản để hồ sơ của bạn luôn chính xác.</p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Họ và tên</label>
+              <input type="text" placeholder="Nhập họ và tên" [(ngModel)]="profileName" />
+            </div>
+
+            <div class="field">
+              <label>Email</label>
+              <input
+                type="email"
+                placeholder="Email tài khoản"
+                [(ngModel)]="profileEmail"
+                readonly
+                class="locked-input"
+              />
+            </div>
+          </div>
+
+          <button type="button" class="primary-btn" (click)="saveProfile()">Lưu thông tin</button>
+
+          <p class="msg success" *ngIf="profileMessage">{{ profileMessage }}</p>
+          <p class="msg error" *ngIf="profileError">{{ profileError }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="accordion-card" [class.open]="showChangePassword">
+      <button type="button" class="accordion-head" (click)="toggleChangePassword()">
+        <div class="accordion-title">
+          <strong>Đổi mật khẩu</strong>
+          <span>Ẩn mặc định, chỉ mở khi cần</span>
+        </div>
+        <div class="accordion-arrow"></div>
+      </button>
+
+      <div class="accordion-body" [class.open]="showChangePassword">
+        <div class="accordion-inner">
+          <p class="section-sub">Cập nhật khi bạn muốn bảo mật tài khoản tốt hơn.</p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Mật khẩu hiện tại</label>
+              <input
+                type="password"
+                placeholder="Nhập mật khẩu hiện tại"
+                [(ngModel)]="currentPassword"
+              />
+            </div>
+
+            <div class="field">
+              <label>Mật khẩu mới</label>
+              <input type="password" placeholder="Nhập mật khẩu mới" [(ngModel)]="newPassword" />
+            </div>
+
+            <div class="field">
+              <label>Xác nhận mật khẩu mới</label>
+              <input
+                type="password"
+                placeholder="Nhập lại mật khẩu mới"
+                [(ngModel)]="confirmPassword"
+              />
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            class="primary-btn"
+            *ngIf="!otpSent"
+            (click)="requestPasswordOtp()"
+            [disabled]="passwordLoading"
+          >
+            {{ passwordLoading ? 'Đang gửi mã...' : 'Gửi mã OTP' }}
+          </button>
+
+          <div class="otp-box" *ngIf="otpSent">
+            <p class="otp-note">
+              Mã OTP đã được gửi đến email tài khoản của bạn. Vui lòng kiểm tra hộp thư.
+            </p>
+
+            <div class="field">
+              <label>Mã OTP</label>
+              <input
+                type="text"
+                maxlength="6"
+                placeholder="Nhập mã OTP 6 số"
+                [(ngModel)]="otp"
+              />
+            </div>
+
+            <p class="otp-count" *ngIf="otpCountdown > 0">
+              Mã còn hiệu lực: <strong>{{ formatOtpTime() }}</strong>
+            </p>
+
+            <p class="otp-count expired" *ngIf="otpCountdown <= 0">
+              Mã OTP đã hết hạn. Vui lòng gửi lại mã mới.
+            </p>
+
+            <button
+              type="button"
+              class="primary-btn"
+              (click)="verifyPasswordOtp()"
+              [disabled]="passwordLoading || otpCountdown <= 0"
+            >
+              {{ passwordLoading ? 'Đang xác nhận...' : 'Xác nhận đổi mật khẩu' }}
+            </button>
+
+            <button
+              type="button"
+              class="ghost-btn resend-otp-btn"
+              (click)="requestPasswordOtp()"
+              [disabled]="passwordLoading"
+            >
+              Gửi lại mã OTP
+            </button>
+          </div>
+
+          <p class="msg success" *ngIf="passwordMessage">{{ passwordMessage }}</p>
+          <p class="msg error" *ngIf="passwordError">{{ passwordError }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="accordion-card" [class.open]="showTestHistory">
+      <button type="button" class="accordion-head" (click)="toggleTestHistory()">
+        <div class="accordion-title">
+          <strong>Lịch sử làm bài test</strong>
+          <span>Xem các lần làm bài test và mở popup để xem chi tiết</span>
+        </div>
+        <div class="accordion-arrow"></div>
+      </button>
+
+      <div class="accordion-body" [class.open]="showTestHistory">
+        <div class="accordion-inner">
+          <div class="history-topbar">
+            <p class="section-sub">
+              Hệ thống lưu lại từng lần làm bài test để bạn xem lại kết quả và đáp án đã chọn.
+            </p>
+
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="loadTestHistory(true)"
+              [disabled]="testHistoryLoading"
+            >
+              Tải lại
+            </button>
+          </div>
+
+          <div class="loading-box" *ngIf="testHistoryLoading">Đang tải lịch sử test...</div>
+
+          <p class="msg error" *ngIf="!testHistoryLoading && testHistoryError">
+            {{ testHistoryError }}
+          </p>
+
+          <div class="test-history-scroll" *ngIf="!testHistoryLoading && testHistories.length > 0">
+            <div class="lesson-history-grid">
+              <button
+                type="button"
+                class="lesson-history-card"
+                *ngFor="let item of testHistories; trackBy: trackByTestHistory"
+                (click)="viewTestDetail(item)"
+              >
+                <div class="lesson-history-card__top">
+                  <span class="lesson-history-card__badge">{{ testTypeLabel(item.test_type) }}</span>
+                  <span class="lesson-history-card__time">
+                    {{ formatDate(item.created_at) }}
+                  </span>
+                </div>
+
+                <h4>{{ summaryTitle(item) }}</h4>
+                <p>{{ summarySubtitle(item) }}</p>
+
+                <div class="lesson-history-card__stats">
+                  <span class="stat-pill">Nhấn để xem chi tiết</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="empty-box"
+            *ngIf="!testHistoryLoading && testHistories.length === 0 && !testHistoryError"
+          >
+            Chưa có lịch sử test nào.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PREMIUM -->
+    <section
+      class="accordion-card"
+      *ngIf="user?.role === 'premium'; else premiumLocked"
+      [class.open]="showLessonHistory"
+    >
+      <button type="button" class="accordion-head" (click)="toggleLessonHistory()">
+        <div class="accordion-title">
+          <strong>Lịch sử làm bài khóa học</strong>
+          <span>Xem các bài học đã trả lời, click vào card để xem chi tiết</span>
+        </div>
+        <div class="accordion-arrow"></div>
+      </button>
+
+      <div class="accordion-body" [class.open]="showLessonHistory">
+        <div class="accordion-inner">
+          <div class="history-topbar">
+            <p class="section-sub">
+              Hệ thống lưu theo từng bài học. Mỗi câu đã chọn sẽ được khóa và hiển thị lại tại đây.
+            </p>
+
+            <div class="history-actions">
+              <button
+                type="button"
+                class="secondary-btn"
+                (click)="loadLessonHistory(true)"
+                [disabled]="lessonHistoryLoading"
+              >
+                Tải lại
+              </button>
+
+              <button
+                type="button"
+                class="ghost-btn"
+                *ngIf="lessonHistories.length"
+                (click)="clearLessonHistory()"
+              >
+                Xóa tất cả
+              </button>
+            </div>
+          </div>
+
+          <div class="loading-box" *ngIf="lessonHistoryLoading">
+            Đang tải lịch sử làm bài khóa học...
+          </div>
+
+          <p class="msg error" *ngIf="!lessonHistoryLoading && lessonHistoryError">
+            {{ lessonHistoryError }}
+          </p>
+
+          <div
+            class="lesson-history-grid"
+            *ngIf="!lessonHistoryLoading && lessonHistories.length > 0"
+          >
+            <button
+              type="button"
+              class="lesson-history-card"
+              *ngFor="let item of lessonHistories; trackBy: trackByLessonHistory"
+              (click)="openLessonHistoryDetail(item)"
+            >
+              <div class="lesson-history-card__top">
+                <span class="lesson-history-card__badge">Bài học</span>
+                <span class="lesson-history-card__time">
+                  {{ formatDate(item.updatedAt) }}
+                </span>
+              </div>
+
+              <h4>{{ item.lessonTitle }}</h4>
+              <p>{{ item.courseName }}</p>
+
+              <div class="lesson-history-card__stats">
+                <span class="stat-pill stat-pill--correct">Đúng: {{ item.correctCount }}</span>
+                <span class="stat-pill stat-pill--wrong">Sai: {{ item.wrongCount }}</span>
+                <span class="stat-pill">Tổng: {{ item.totalQuestions }}</span>
+              </div>
+            </button>
+          </div>
+
+          <div
+            class="empty-box"
+            *ngIf="!lessonHistoryLoading && lessonHistories.length === 0 && !lessonHistoryError"
+          >
+            Chưa có lịch sử làm bài khóa học nào.
+          </div>
+        </div>
+      </div>
+    </section>
+    <ng-template #premiumLocked>
+      <section class="accordion-card premium-lock-card">
+        <div class="accordion-inner premium-lock-inner">
+
+          <div class="premium-lock-icon">🔒</div>
+
+          <h3>Lịch sử làm bài khóa học</h3>
+
+          <p>
+            Bạn đang sử dụng gói
+            <strong>{{ user?.package_name || 'Plus' }}</strong>.
+          </p>
+
+          <p class="premium-lock-desc">
+            Nâng cấp lên <strong>Premium</strong> để mở khóa khóa học,
+            lưu tiến độ học tập và xem lại toàn bộ câu hỏi đã làm.
+          </p>
+        </div>
+      </section>
+    </ng-template>
+  </div>
+</div>
+
+<!-- popup lịch sử bài học -->
+<div class="lesson-detail-modal" *ngIf="selectedLessonHistory" (click)="closeLessonHistoryDetail()">
+  <div class="lesson-detail-box" (click)="$event.stopPropagation()">
+    <div class="lesson-detail-head">
+      <div>
+        <span class="lesson-detail-badge">Chi tiết bài đã làm</span>
+        <h3>{{ selectedLessonHistory?.lessonTitle }}</h3>
+        <p>{{ selectedLessonHistory?.courseName }}</p>
+      </div>
+
+      <button type="button" class="lesson-detail-close" (click)="closeLessonHistoryDetail()">
+        ×
+      </button>
+    </div>
+
+    <div class="lesson-detail-meta">
+      <span>{{ formatDate(selectedLessonHistory?.updatedAt || '') }}</span>
+      <span class="meta-pill meta-pill--correct"
+        >Đúng: {{ selectedLessonHistory?.correctCount }}</span
+      >
+      <span class="meta-pill meta-pill--wrong">Sai: {{ selectedLessonHistory?.wrongCount }}</span>
+      <span class="meta-pill">Tổng: {{ selectedLessonHistory?.totalQuestions }}</span>
+    </div>
+
+    <div class="lesson-detail-list" *ngIf="selectedLessonHistory?.questions?.length">
+      <article
+        class="lesson-detail-item"
+        *ngFor="let question of selectedLessonHistory?.questions; let i = index"
+      >
+        <div class="lesson-detail-item__head">
+          <span class="lesson-detail-item__index">Câu {{ i + 1 }}</span>
+          <h4>{{ question.question }}</h4>
+        </div>
+
+        <div class="lesson-detail-options">
+          <div
+            class="lesson-detail-option"
+            *ngFor="let option of question.options; let oIndex = index"
+            [class.is-selected]="question.selectedOptionIndex === oIndex"
+            [class.is-correct]="option.is_correct"
+            [class.is-wrong]="question.selectedOptionIndex === oIndex && !option.is_correct"
+          >
+            <span class="lesson-detail-option__label">
+              {{ ['A', 'B', 'C', 'D', 'E', 'F'][oIndex] || oIndex + 1 }}
+            </span>
+
+            <span class="lesson-detail-option__text">{{ option.content }}</span>
+          </div>
+        </div>
+
+        <div
+          class="lesson-detail-result"
+          [class.is-correct]="question.isCorrect"
+          [class.is-wrong]="!question.isCorrect"
+        >
+          {{ question.isCorrect ? 'Trả lời đúng' : 'Trả lời sai' }}
+        </div>
+
+        <div class="lesson-detail-answer">
+          Đã chọn: <strong>{{ question.selectedOptionContent }}</strong>
+        </div>
+
+        <div class="lesson-detail-answer-time">
+          Trả lời lúc: {{ formatDate(question.answeredAt) }}
+        </div>
+
+        <div class="lesson-detail-explanation" *ngIf="question.explanation">
+          <strong>Giải thích:</strong> {{ question.explanation }}
+        </div>
+      </article>
+    </div>
+  </div>
+</div>
+
+<!-- loading popup lịch sử test -->
+<div
+  class="detail-overlay detail-overlay--loading"
+  *ngIf="testDetailLoading && !selectedTestDetail"
+  (click)="cancelTestDetailLoading()"
+>
+  <div class="detail-loading-card" (click)="$event.stopPropagation()">
+    <div class="detail-loading-spinner"></div>
+    <strong>Đang tải chi tiết bài test...</strong>
+    <p>
+      {{
+        selectedTestHistoryItem ? summaryTitle(selectedTestHistoryItem) : 'Vui lòng chờ một chút'
+      }}
+    </p>
+
+    <button
+      type="button"
+      class="ghost-btn detail-loading-close"
+      (click)="cancelTestDetailLoading()"
+    >
+      Đóng
+    </button>
+  </div>
+</div>
+
+<!-- popup lịch sử test -->
+<div class="detail-overlay" *ngIf="selectedTestDetail as detail" (click)="closeTestDetail()">
+  <div class="detail-modal" (click)="$event.stopPropagation()">
+    <button type="button" class="close-btn detail-modal__close" (click)="closeTestDetail()">
+      ×
+    </button>
+
+    <!-- MBTI: FREE -->
+    <ng-container *ngIf="isBasicFreeHistory(detail)">
+      <section class="result-section">
+        <h3>Phân tích tính cách</h3>
+        <p class="radar-desc">
+          {{ resultSummary(detail) }}
+        </p>
+      </section>
+
+      <section class="result-section" *ngIf="scoreEntries(detail).length > 0">
+        <h3>Điểm nổi bật</h3>
+
+        <div class="score-list">
+          <div class="score-chip" *ngFor="let item of scoreEntries(detail)">
+            <strong>{{ item.key }}</strong>
+            <span>{{ item.value }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="result-section" *ngIf="shouldShowBasicUpgradeNote(detail)">
+        <h3>Mở rộng kết quả</h3>
+        <p class="radar-desc">
+          Lần làm bài này dùng tài khoản free nên chỉ hiển thị thông tin cơ bản.
+        </p>
+      </section>
+    </ng-container>
+
+    <!-- PLUS: GÓI SỞ THÍCH -->
+    <ng-container *ngIf="isBasicPaidHistory(detail)">
+      <section class="result-section history-result-like-page">
+        <h3>Bản đồ tính cách & sở thích</h3>
+
+        <div class="plus-map-grid">
+          <div class="plus-map-left">
+            <div class="combo-title">Trục tính cách MBTI</div>
+
+            <div class="trait-list">
+              <div class="trait-row" *ngFor="let item of getHistoryMbtiBars(detail)">
+                <div class="trait-head">
+                  <span>{{ item.left }}</span>
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.right }}</span>
+                </div>
+
+                <div class="trait-track">
+                  <div class="trait-fill" [style.width.%]="item.percent"></div>
+                </div>
+
+                <div class="trait-meta">
+                  {{ item.dominant }} {{ item.percent }}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="plus-map-middle">
+            <div class="combo-title">Nhóm sở thích nổi bật</div>
+
+            <div class="interest-bars">
+              <div class="interest-row" *ngFor="let item of getHistoryInterestRows(detail)">
+                <div class="interest-head">
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.percent }}%</strong>
+                </div>
+
+                <div class="interest-track">
+                  <div
+                    class="interest-fill"
+                    [class.creative]="item.key === 'creative'"
+                    [class.analytic]="item.key === 'analytic'"
+                    [class.social]="item.key === 'social'"
+                    [class.business]="item.key === 'business'"
+                    [style.width.%]="item.percent"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="plus-map-right">
+            <div class="combo-title">Phân tích sở thích nổi trội</div>
+
+            <div class="group-analysis plus-vertical">
+              <div class="group-card" *ngFor="let item of getHistoryTopInterestGroups(detail)">
+                <h3>{{ item.label }}</h3>
+                <p>{{ item.description }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="result-section">
+        <h3>Gợi ý ngành theo MBTI + sở thích</h3>
+
+
+        <div class="premium-major-grid" *ngIf="getPremiumHistoryCareers(detail).length > 0">
+          <div class="premium-major-card" *ngFor="let item of getPremiumHistoryCareers(detail); let i = index">
+            <div class="major-top">
+              <div class="major-rank">#{{ i + 1 }}</div>
+
+              <div class="major-title-wrap">
+                <h3>{{ item.name }}</h3>
+              </div>
+            </div>
+
+            <p class="major-desc">{{ item.description }}</p>
+
+            <ul class="major-reasons" *ngIf="item.reasons?.length">
+              <li *ngFor="let reason of item.reasons">{{ reason }}</li>
+            </ul>
+
+            <div class="career-schools" *ngIf="getHistoryCareerSchools(item).length">
+              <div class="school-title">Trường gợi ý</div>
+
+              <div class="school-logo-list">
+                <div
+                  class="school-logo-tag"
+                  *ngFor="let school of getHistoryCareerSchools(item)"
+                  [class.school-featured]="school.featured"
+                  [title]="school.name"
+                >
+                  <div class="school-logo-frame">
+                    <img *ngIf="school.imageUrl; else schoolInitial" [src]="school.imageUrl" [alt]="school.name" />
+                    <ng-template #schoolInitial>
+                      <span class="school-initial">{{ school.name ? school.name[0] : 'T' }}</span>
+                    </ng-template>
+                  </div>
+
+                  <div class="school-hover-card">
+                    <div class="hover-logo-box">
+                      <img *ngIf="school.imageUrl; else hoverInitial" [src]="school.imageUrl" [alt]="school.name" />
+                      <ng-template #hoverInitial>
+                        <span class="school-initial">{{ school.name ? school.name[0] : 'T' }}</span>
+                      </ng-template>
+                    </div>
+
+                    <div class="hover-content">
+                      <h4>{{ school.name }}</h4>
+                      <p *ngIf="school.city">{{ school.city }}</p>
+                      <p *ngIf="school.majorName">Ngành: {{ school.majorName }}</p>
+                      <p *ngIf="school.shortDescription">{{ school.shortDescription }}</p>
+                      <p *ngIf="school.featured"><strong>Nhà tài trợ nổi bật</strong></p>
+
+                      <button type="button" class="view-detail-link" (click)="goToAdmissionFromHistory(school)">
+                        Xem chi tiết
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+
+    <ng-container *ngIf="shouldShowFullBlocks(detail)">
+      <section class="history-premium-shell">
+        <div class="premium-meta-strip">
+          <span class="premium-meta-chip premium-meta-mbti">
+            MBTI: {{ getMbtiType(detail) }}
+          </span>
+
+          <span class="premium-meta-chip premium-meta-package">
+            Gói: {{ historyPackageName(detail) }}
+          </span>
+
+          <span class="premium-meta-chip">
+            Cập nhật: {{ formatDate(detail.created_at) }}
+          </span>
+        </div>
+
+        <section class="premium-overview-grid">
+          <article class="premium-overview-card profile-overview-card">
+            <h2 class="premium-panel-title">TỔNG QUAN HỒ SƠ CỦA BẠN</h2>
+
+            <div class="profile-legend">
+              <span class="profile-legend-item profile-legend-interest">
+                <span class="profile-legend-dot"></span>
+                Sở thích (4 tiêu chí)
+              </span>
+
+              <span class="profile-legend-item profile-legend-ability">
+                <span class="profile-legend-dot"></span>
+                Năng lực (10 tiêu chí)
+              </span>
+            </div>
+
+            <div class="profile-wheel-wrap">
+              <svg
+                class="profile-wheel"
+                [attr.viewBox]="'0 0 ' + overviewSvgSize + ' ' + overviewSvgSize"
+                xmlns="http://www.w3.org/2000/svg"
+                role="img"
+                aria-label="Biểu đồ tổng quan sở thích và năng lực"
+              >
+                <g class="ability-wheel-layer">
+                  <g *ngFor="let segment of historyAbilityCircleSegments(detail)">
+                    <path
+                      [attr.d]="segment.areaPath"
+                      class="wheel-sector wheel-sector-ability"
+                    ></path>
+
+                    <path
+                      *ngIf="segment.progressPath"
+                      [attr.d]="segment.progressPath"
+                      class="wheel-progress wheel-progress-ability"
+                    ></path>
+
+                    <text
+                      [attr.x]="segment.labelX"
+                      [attr.y]="segment.labelY"
+                      class="wheel-label wheel-label-ability"
+                      text-anchor="middle"
+                    >
+                      <tspan
+                        *ngFor="let line of segment.labelLines; let lineIndex = index"
+                        [attr.x]="segment.labelX"
+                        [attr.dy]="lineIndex === 0 ? 0 : 17"
+                      >
+                        {{ line }}
+                      </tspan>
+
+                      <tspan
+                        [attr.x]="segment.labelX"
+                        dy="23"
+                        class="wheel-percent wheel-percent-ability"
+                      >
+                        {{ formatPercent(segment.percent) }}%
+                      </tspan>
+                    </text>
+                  </g>
+                </g>
+
+                <g class="interest-wheel-layer">
+                  <g *ngFor="let segment of historyInterestCircleSegments(detail)">
+                    <path
+                      [attr.d]="segment.areaPath"
+                      class="wheel-sector wheel-sector-interest"
+                    ></path>
+
+                    <path
+                      *ngIf="segment.progressPath"
+                      [attr.d]="segment.progressPath"
+                      class="wheel-progress wheel-progress-interest"
+                    ></path>
+
+                    <text
+                      [attr.x]="segment.labelX"
+                      [attr.y]="segment.labelY"
+                      class="wheel-label wheel-label-interest"
+                      text-anchor="middle"
+                    >
+                      <tspan
+                        *ngFor="let line of segment.labelLines; let lineIndex = index"
+                        [attr.x]="segment.labelX"
+                        [attr.dy]="lineIndex === 0 ? 0 : 18"
+                      >
+                        {{ line }}
+                      </tspan>
+
+                      <tspan
+                        [attr.x]="segment.labelX"
+                        dy="24"
+                        class="wheel-percent wheel-percent-interest"
+                      >
+                        {{ formatPercent(segment.percent) }}%
+                      </tspan>
+                    </text>
+                  </g>
+                </g>
+
+                <circle
+                  [attr.cx]="overviewCenter"
+                  [attr.cy]="overviewCenter"
+                  r="82"
+                  class="wheel-center"
+                ></circle>
+
+                <text
+                  [attr.x]="overviewCenter"
+                  [attr.y]="overviewCenter - 2"
+                  class="wheel-center-type"
+                  text-anchor="middle"
+                >
+                  {{ getMbtiType(detail) }}
+                </text>
+
+                <text
+                  [attr.x]="overviewCenter"
+                  [attr.y]="overviewCenter + 28"
+                  class="wheel-center-caption"
+                  text-anchor="middle"
+                >
+                  Hồ sơ tổng hợp
+                </text>
+              </svg>
+            </div>
+
+            <div class="profile-wheel-note">
+              <span class="profile-wheel-note-icon">i</span>
+              <span>
+                Tỷ lệ càng cao thể hiện mức độ bạn có sở thích hoặc năng lực mạnh hơn ở tiêu chí đó.
+              </span>
+            </div>
+          </article>
+
+          <article class="premium-overview-card premium-summary-card">
+            <div class="premium-result-hero">
+              <div class="premium-result-copy">
+                <p class="premium-result-kicker">KẾT QUẢ GÓI PREMIUM</p>
+
+                <h1>
+                  {{ getHistoryMbtiTitle(detail) }}
+                  ({{ getMbtiType(detail) }})
+                </h1>
+
+                <p>
+                  Kết quả này được tổng hợp từ MBTI, sở thích và năng lực để đưa ra định hướng sâu hơn.
+                </p>
+              </div>
+
+              <div class="premium-result-robot">
+                <img
+                  [src]="getHistoryMbtiRobotImage(detail)"
+                  [alt]="getMbtiType(detail)"
+                />
+              </div>
+            </div>
+
+            <div class="premium-summary-divider"></div>
+
+            <div class="top-ability-panel">
+              <h2 class="premium-panel-title">TOP NĂNG LỰC NỔI TRỘI</h2>
+              <p class="top-ability-subtitle">3 năng lực có tỷ lệ nổi bật cao nhất</p>
+
+              <div class="top-ability-list">
+                <div
+                  class="top-ability-row"
+                  *ngFor="let item of topAbilitiesFromDetail(detail); let i = index"
+                  [class.top-ability-first]="i === 0"
+                  [class.top-ability-second]="i === 1"
+                  [class.top-ability-third]="i === 2"
+                >
+                  <span class="top-ability-rank">#{{ i + 1 }}</span>
+
+                  <div class="top-ability-copy">
+                    <strong class="top-ability-name">{{ item.label }}</strong>
+                    <span class="top-ability-description">{{ item.description }}</span>
+                  </div>
+
+                  <strong class="top-ability-value" *ngIf="item.percent !== undefined">
+                    {{ item.percent }}%
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="premium-history-section" *ngIf="historyAiAnalysis(detail)">
+          <h2>AI phân tích kết quả</h2>
+
+          <div class="career-analysis-box">
+            <div class="career-ai-content" [innerHTML]="historyAiAnalysis(detail)"></div>
+          </div>
+        </section>
+
+        <section
+          class="premium-history-section premium-career-section"
+          *ngIf="getPremiumHistoryCareers(detail).length > 0"
+        >
+          <h2>Ngành nghề và trường phù hợp</h2>
+
+          <div class="career-grid">
+            <article
+              class="career-card"
+              *ngFor="let item of getPremiumHistoryCareers(detail); let i = index"
+            >
+              <div class="career-main-content">
+                <div class="career-top">
+                  <div class="career-rank">#{{ i + 1 }}</div>
+
+                  <div class="career-head">
+                    <h3>{{ item.name }}</h3>
+
+                    <span class="career-score" *ngIf="item.score">
+                      {{ item.score }}%
+                    </span>
+                  </div>
+                </div>
+
+                <p class="career-desc">{{ item.description }}</p>
+
+                <ul class="career-reasons" *ngIf="item.reasons?.length">
+                  <li *ngFor="let reason of item.reasons">
+                    {{ reason }}
+                  </li>
+                </ul>
+              </div>
+
+              <div class="career-schools">
+                <ng-container
+                  *ngIf="
+                    getHistoryCareerSchools(item).length > 0;
+                    else emptySchoolArea
+                  "
+                >
+                  <div class="school-title">Trường phù hợp</div>
+
+                  <div class="school-logo-list">
+                    <div
+                      class="school-logo-tag"
+                      *ngFor="let school of getHistoryCareerSchools(item)"
+                      [class.school-featured]="school.featured"
+                      [title]="school.name"
+                    >
+                      <div class="school-logo-frame">
+                        <img
+                          *ngIf="school.imageUrl; else schoolInitial"
+                          [src]="school.imageUrl"
+                          [alt]="school.name"
+                        />
+
+                        <ng-template #schoolInitial>
+                          <span class="school-initial">
+                            {{ school.name ? school.name[0] : 'T' }}
+                          </span>
+                        </ng-template>
+                      </div>
+
+                      <div class="school-hover-card">
+                        <div class="hover-logo-box">
+                          <img
+                            *ngIf="school.imageUrl; else hoverInitial"
+                            [src]="school.imageUrl"
+                            [alt]="school.name"
+                          />
+
+                          <ng-template #hoverInitial>
+                            <span class="school-initial">
+                              {{ school.name ? school.name[0] : 'T' }}
+                            </span>
+                          </ng-template>
+                        </div>
+
+                        <div class="hover-content">
+                          <h4>{{ school.name }}</h4>
+                          <p *ngIf="school.city">{{ school.city }}</p>
+                          <p *ngIf="school.majorName">
+                            Ngành: {{ school.majorName }}
+                          </p>
+                          <p *ngIf="school.shortDescription">
+                            {{ school.shortDescription }}
+                          </p>
+                          <p *ngIf="school.featured">
+                            <strong>Nhà tài trợ nổi bật</strong>
+                          </p>
+
+                          <button
+                            type="button"
+                            class="view-detail-link"
+                            (click)="goToAdmissionFromHistory(school)"
+                          >
+                            Xem chi tiết
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-template #emptySchoolArea>
+                  <div class="school-title">Trường phù hợp</div>
+
+                  <div class="career-schools-empty">
+                    Hiện chưa có trường phù hợp
+                  </div>
+                </ng-template>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="premium-history-section answer-detail-section" *ngIf="detail.questions?.length">
+          <h2>Câu hỏi và câu trả lời đã làm</h2>
+
+          <div class="question-grid">
+            <div class="question-box" *ngFor="let question of detail.questions; let i = index">
+              <h4>{{ getDisplayQuestionLabel(i) }}: {{ question.question }}</h4>
+
+              <p *ngIf="question.optionA">A. {{ question.optionA }}</p>
+              <p *ngIf="question.optionB">B. {{ question.optionB }}</p>
+              <p *ngIf="question.optionC">C. {{ question.optionC }}</p>
+              <p *ngIf="question.optionD">D. {{ question.optionD }}</p>
+
+              <p class="answer-picked">
+                <strong>Đáp án đã chọn:</strong> {{ answerOf(question.id) }}
+              </p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </ng-container>
+
+    <section class="result-section answer-detail-section" *ngIf="shouldShowAnswerDetail(detail)">
+      <h3>Chi tiết câu trả lời</h3>
+
+      <div class="question-grid">
+        <div class="question-box" *ngFor="let question of detail.questions; let i = index">
+          <h4>{{ getDisplayQuestionLabel(i) }}: {{ question.question }}</h4>
+          <p><strong>Phần:</strong> {{ getQuestionSectionLabel(question) }}</p>
+          <p>A. {{ question.optionA }}</p>
+          <p>B. {{ question.optionB }}</p>
+          <p class="answer-picked"><strong>Đáp án đã chọn:</strong> {{ answerOf(question.id) }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

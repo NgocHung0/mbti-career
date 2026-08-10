@@ -1,0 +1,328 @@
+<div class="admin-mbti">
+  <div class="page-head">
+    <div>
+      <p class="page-kicker">QUẢN LÝ CÂU HỎI</p>
+      <h1>Danh sách câu hỏi trắc nghiệm</h1>
+      <span>Quản lý 3 nhóm câu hỏi: MBTI, sở thích và năng lực trong hệ thống NAVI</span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p>Tổng câu hỏi</p>
+      <h3>{{ totalQuestions() }}</h3>
+      <span>Tổng số câu hiện có trong hệ thống</span>
+    </div>
+
+    <div class="stat-card">
+      <p>Free - MBTI</p>
+      <h3>{{ packageCount('free') }}</h3>
+      <span>
+        {{ packageCount('free') }} câu tính cách theo 4 cặp tiêu chí MBTI
+      </span>
+    </div>
+
+    <div class="stat-card">
+      <p>Plus - Sở thích</p>
+      <h3>{{ packageCount('plus') }}</h3>
+      <span>
+        {{ packageCount('plus') }} câu đánh giá 4 tiêu chí sở thích
+      </span>
+    </div>
+
+    <div class="stat-card">
+      <p>Premium - Năng lực</p>
+      <h3>{{ packageCount('premium') }}</h3>
+      <span>
+        {{ packageCount('premium') }} câu đánh giá 10 tiêu chí năng lực
+      </span>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head panel-head--filters">
+      <div class="search-box">
+        <input
+          type="text"
+          [(ngModel)]="q"
+          (ngModelChange)="onSearchChange()"
+          placeholder="Tìm theo câu hỏi hoặc đáp án."
+        />
+      </div>
+
+      <select
+        class="filter-select"
+        [(ngModel)]="packageFilter"
+        (change)="onPackageChange()"
+      >
+        <option value="all">Tất cả gói</option>
+        <option value="free">Free - MBTI</option>
+        <option value="plus">Plus - Sở thích</option>
+        <option value="premium">Premium - Năng lực</option>
+      </select>
+
+      <select
+        class="filter-select"
+        [(ngModel)]="axisFilter"
+        (change)="onAxisChange()"
+      >
+        <option value="all">Tất cả cặp tiêu chí</option>
+        <option *ngFor="let axis of axisFilterOptions" [value]="axis">
+          {{ axis }}
+        </option>
+      </select>
+
+      <div class="head-actions">
+        <button type="button" class="ghost-filter-btn" (click)="resetFilters()">Xóa lọc</button>
+        <button type="button" class="reload-btn" (click)="loadItems(currentPage)">Tải lại</button>
+        <button type="button" class="add-btn" (click)="openCreate()">Thêm câu hỏi</button>
+      </div>
+    </div>
+
+    <div class="state-box" *ngIf="loading">
+      Đang tải danh sách câu hỏi...
+    </div>
+
+    <div class="state-box error" *ngIf="!loading && error">
+      {{ error }}
+    </div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Câu hỏi</th>
+            <th>Đáp án A</th>
+            <th>Đáp án B</th>
+            <th>Nhóm đánh giá</th>
+            <th>Gói</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredItems; let i = index">
+            <td>{{ rowNumber(i) }}</td>
+            <td class="question-col">{{ item.question }}</td>
+            <td>{{ item.option_a }}</td>
+            <td>{{ item.option_b }}</td>
+
+            <td>
+              <span class="axis-pill">{{ item.axis }}</span>
+            </td>
+
+            <td>
+              <span
+                class="package-pill"
+                [class.package-free]="item.package_type === 'free'"
+                [class.package-plus]="item.package_type === 'plus'"
+                [class.package-premium]="item.package_type === 'premium'"
+              >
+                {{ packageLabel(item.package_type) }}
+              </span>
+            </td>
+
+            <td>
+              <div class="actions">
+                <button type="button" (click)="openEdit(item)">Sửa</button>
+                <button type="button" class="danger-btn" (click)="openDelete(item)">Xóa</button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredItems.length === 0">
+            <td colspan="7" class="empty-row">Không tìm thấy câu hỏi phù hợp.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="!loading && lastPage > 1 && q.trim() === ''">
+      <button type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+
+      <button
+        type="button"
+        *ngFor="let page of pageNumbers()"
+        [class.active]="page === currentPage"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+
+      <button type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === lastPage">›</button>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" *ngIf="showCreateModal" (click)="closeCreate()"></div>
+
+<div class="modal-shell" *ngIf="showCreateModal">
+  <div class="modal-card modal-card--form">
+    <div class="modal-head">
+      <div>
+        <h3>Thêm câu hỏi trắc nghiệm</h3>
+        <p class="modal-subtitle">Nhập nội dung câu hỏi, đáp án và chọn nhóm đánh giá phù hợp.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeCreate()">✕</button>
+    </div>
+
+    <div class="form-grid form-grid--compact">
+      <div class="field field-full">
+        <label>Câu hỏi</label>
+        <textarea
+          [(ngModel)]="createForm.question"
+          rows="3"
+          placeholder="Nhập nội dung câu hỏi..."
+        ></textarea>
+      </div>
+
+      <div class="field">
+        <label>Đáp án A</label>
+        <input
+          type="text"
+          [(ngModel)]="createForm.option_a"
+          placeholder="Nhập đáp án A"
+        />
+      </div>
+
+      <div class="field">
+        <label>Đáp án B</label>
+        <input
+          type="text"
+          [(ngModel)]="createForm.option_b"
+          placeholder="Nhập đáp án B"
+        />
+      </div>
+
+      <div class="field">
+        <label>Gói câu hỏi</label>
+        <select [(ngModel)]="createForm.package_type">
+          <option value="free">Free - MBTI</option>
+          <option value="plus">Plus - Sở thích</option>
+          <option value="premium">Premium - Năng lực</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Nhóm đánh giá</label>
+        <select [(ngModel)]="createForm.axis">
+          <option value="">Chọn nhóm đánh giá</option>
+          <option *ngFor="let axis of axisOptionsByPackage[createForm.package_type]" [value]="axis">
+            {{ axis }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <p class="modal-error" *ngIf="createError">{{ createError }}</p>
+
+    <div class="modal-actions modal-actions--sticky">
+      <button type="button" class="ghost-btn" (click)="closeCreate()" [disabled]="creating">Hủy</button>
+
+      <button type="button" class="primary-btn" (click)="saveCreate()" [disabled]="creating">
+        {{ creating ? 'Đang tạo...' : 'Tạo câu hỏi' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showEditModal" (click)="closeEdit()"></div>
+
+<div class="modal-shell" *ngIf="showEditModal">
+  <div class="modal-card modal-card--form">
+    <div class="modal-head">
+      <div>
+        <h3>Chỉnh sửa câu hỏi trắc nghiệm</h3>
+        <p class="modal-subtitle">Cập nhật nội dung câu hỏi, đáp án và nhóm đánh giá.</p>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeEdit()">✕</button>
+    </div>
+
+    <div class="form-grid form-grid--compact">
+      <div class="field field-full">
+        <label>Câu hỏi</label>
+        <textarea
+          [(ngModel)]="editForm.question"
+          rows="3"
+          placeholder="Nhập nội dung câu hỏi..."
+        ></textarea>
+      </div>
+
+      <div class="field">
+        <label>Đáp án A</label>
+        <input
+          type="text"
+          [(ngModel)]="editForm.option_a"
+          placeholder="Nhập đáp án A"
+        />
+      </div>
+
+      <div class="field">
+        <label>Đáp án B</label>
+        <input
+          type="text"
+          [(ngModel)]="editForm.option_b"
+          placeholder="Nhập đáp án B"
+        />
+      </div>
+
+      <div class="field">
+        <label>Gói câu hỏi</label>
+        <select [(ngModel)]="editForm.package_type">
+          <option value="free">Free - MBTI</option>
+          <option value="plus">Plus - Sở thích</option>
+          <option value="premium">Premium - Năng lực</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Nhóm đánh giá</label>
+        <select [(ngModel)]="editForm.axis">
+          <option value="">Chọn nhóm đánh giá</option>
+          <option *ngFor="let axis of axisOptionsByPackage[editForm.package_type]" [value]="axis">
+            {{ axis }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <p class="modal-error" *ngIf="editError">{{ editError }}</p>
+
+    <div class="modal-actions modal-actions--sticky">
+      <button type="button" class="ghost-btn" (click)="closeEdit()" [disabled]="updating">Hủy</button>
+
+      <button type="button" class="primary-btn" (click)="saveEdit()" [disabled]="updating">
+        {{ updating ? 'Đang lưu...' : 'Lưu thay đổi' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showDeleteModal" (click)="closeDelete()"></div>
+
+<div class="modal-shell" *ngIf="showDeleteModal">
+  <div class="modal-card modal-card--sm">
+    <div class="modal-head">
+      <h3>Xóa câu hỏi</h3>
+      <button type="button" class="close-btn" (click)="closeDelete()">✕</button>
+    </div>
+
+    <div class="delete-box">
+      <p>Bạn có chắc muốn xóa câu hỏi này không?</p>
+      <span>{{ selectedItem?.question }}</span>
+    </div>
+
+    <p class="modal-error" *ngIf="deleteError">{{ deleteError }}</p>
+
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" (click)="closeDelete()" [disabled]="deleting">Hủy</button>
+
+      <button type="button" class="danger-solid-btn" (click)="confirmDelete()" [disabled]="deleting">
+        {{ deleting ? 'Đang xóa...' : 'Xóa câu hỏi' }}
+      </button>
+    </div>
+  </div>
+</div>

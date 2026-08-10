@@ -1,0 +1,288 @@
+<div class="admin-users">
+  <div class="page-head">
+    <div>
+  
+      <h1>Danh sách tài khoản</h1>
+      <span>Theo dõi, tìm kiếm và quản lý người dùng trong hệ thống NAVI</span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p>Tổng user</p>
+      <h3>{{ totalUsers() }}</h3>
+      <span>Tổng số người dùng</span>
+    </div>
+
+    <div class="stat-card">
+      <p>Đang hoạt động</p>
+      <h3>{{ activeUsers() }}</h3>
+      <span>Số user có trạng thái active</span>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head panel-head--filters">
+    <div class="search-box">
+        <input
+          type="text"
+          [(ngModel)]="q"
+          (ngModelChange)="onSearchChange()"
+          autocomplete="off"
+          placeholder="Tìm theo tên, email..."
+        />
+    </div>
+
+
+
+    <select
+      class="filter-select"
+      [(ngModel)]="statusFilter"
+      (change)="onFilterChange()"
+    >
+      <option value="all">Tất cả trạng thái</option>
+      <option value="active">Hoạt động</option>
+      <option value="inactive">Tạm khóa</option>
+    </select>
+
+    <div class="head-actions">
+        <button type="button" class="ghost-filter-btn" (click)="resetFilters()">Xóa lọc</button>
+        <button type="button" class="reload-btn" (click)="loadUsers(currentPage)">Tải lại</button>
+        <button type="button" class="add-btn" (click)="openCreate()">+ Thêm user</button>
+    </div>
+    </div>
+
+    <div class="state-box" *ngIf="loading">
+      Đang tải danh sách người dùng...
+    </div>
+
+    <div class="state-box error" *ngIf="!loading && error">
+      {{ error }}
+    </div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Họ tên</th>
+            <th>Email</th>
+            <th>Gói nâng cấp</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let user of filteredUsers; let i = index">
+            <td>{{ rowNumber(i) }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+
+              <td>
+                <span
+                  class="package-pill"
+                  [ngClass]="{
+                    free: user.role === 'user',
+                    plus: user.role === 'plus',
+                    premium: user.role === 'premium'
+                  }"
+                >
+                  {{
+                    user.role === 'plus'
+                      ? 'Plus'
+                      : user.role === 'premium'
+                      ? 'Premium'
+                      : 'Free'
+                  }}
+                </span>
+              </td>
+
+              <td>
+                <span class="status-pill" [class.inactive]="user.status === 'inactive'">
+                {{ user.status === 'active' ? 'Hoạt động' : 'Tạm khóa' }}
+              </span>
+            </td>
+            <td>{{ formatDate(user.joined_at) }}</td>
+            <td>
+              <div class="actions">
+                <button type="button" (click)="openView(user)">Xem</button>
+                <button type="button" (click)="openEdit(user)">Sửa</button>
+                <button type="button" class="danger-btn" (click)="openDelete(user)">Xóa</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td colspan="7" class="empty-row">Không tìm thấy người dùng phù hợp.</td>          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="!loading && lastPage > 1">
+      <button type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+
+      <button
+        type="button"
+        *ngFor="let page of pageNumbers()"
+        [class.active]="page === currentPage"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+
+      <button type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === lastPage">›</button>
+    </div>
+  </section>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-backdrop" *ngIf="showViewModal" (click)="closeView()"></div>
+<div class="modal-shell" *ngIf="showViewModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Chi tiết người dùng</h3>
+      <button type="button" class="close-btn" (click)="closeView()">✕</button>
+    </div>
+
+    <div class="detail-grid" *ngIf="selectedUser as user">
+      <div class="detail-item">
+        <label>Họ tên</label>
+        <strong>{{ user.name }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <label>Email</label>
+        <strong>{{ user.email }}</strong>
+      </div>
+
+      <div class="detail-item">
+        <label>Trạng thái</label>
+        <strong>{{ user.status === 'active' ? 'Hoạt động' : 'Tạm khóa' }}</strong>
+      </div>
+
+      <div class="detail-item full">
+        <label>Ngày tạo</label>
+        <strong>{{ formatDate(user.joined_at) }}</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-backdrop" *ngIf="showEditModal" (click)="closeEdit()"></div>
+<div class="modal-shell" *ngIf="showEditModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Chỉnh sửa người dùng</h3>
+      <button type="button" class="close-btn" (click)="closeEdit()">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Họ tên</label>
+        <input type="text" [(ngModel)]="editForm.name" />
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="text" [(ngModel)]="editForm.email" />
+      </div>
+
+      <div class="field">
+        <label>Trạng thái</label>
+        <select [(ngModel)]="editForm.status">
+          <option value="active">Hoạt động</option>
+          <option value="inactive">Tạm khóa</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="modal-error" *ngIf="editError">{{ editError }}</p>
+
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" (click)="closeEdit()" [disabled]="savingEdit">
+        Hủy
+      </button>
+      <button type="button" class="primary-btn" (click)="saveEdit()" [disabled]="savingEdit">
+        {{ savingEdit ? 'Đang lưu...' : 'Lưu thay đổi' }}
+      </button>
+    </div>
+  </div>
+</div>
+<!-- CREATE MODAL -->
+<div class="modal-backdrop" *ngIf="showCreateModal" (click)="closeCreate()"></div>
+<div class="modal-shell" *ngIf="showCreateModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Thêm người dùng</h3>
+      <button type="button" class="close-btn" (click)="closeCreate()">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Họ tên</label>
+        <input type="text" [(ngModel)]="createForm.name" />
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="text" [(ngModel)]="createForm.email" />
+      </div>
+
+      <div class="field">
+        <label>Mật khẩu</label>
+        <input type="password" [(ngModel)]="createForm.password" />
+      </div>
+
+      <div class="field">
+        <label>Trạng thái</label>
+        <select [(ngModel)]="createForm.status">
+          <option value="active">Hoạt động</option>
+          <option value="inactive">Tạm khóa</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="modal-error" *ngIf="createError">{{ createError }}</p>
+
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" (click)="closeCreate()" [disabled]="creatingUser">
+        Hủy
+      </button>
+        <button type="button" class="primary-btn" (click)="saveCreate()" [disabled]="creatingUser">
+        {{ creatingUser ? 'Đang tạo...' : 'Tạo người dùng' }}
+        </button>
+    </div>
+  </div>
+</div> 
+<!-- DELETE MODAL -->
+<div class="modal-backdrop" *ngIf="showDeleteModal" (click)="closeDelete()"></div>
+<div class="modal-shell" *ngIf="showDeleteModal">
+  <div class="modal-card modal-card--sm">
+    <div class="modal-head">
+      <h3>Xóa người dùng</h3>
+      <button type="button" class="close-btn" (click)="closeDelete()">✕</button>
+    </div>
+
+    <div class="delete-box" *ngIf="selectedUser as user">
+      <p>
+        Bạn có chắc muốn xóa tài khoản
+        <strong>{{ user.name }}</strong>
+        không?
+      </p>
+      <span>Email: {{ user.email }}</span>
+    </div>
+
+    <p class="modal-error" *ngIf="deleteError">{{ deleteError }}</p>
+
+    <div class="modal-actions">
+      <button type="button" class="ghost-btn" (click)="closeDelete()" [disabled]="deletingUser">
+        Hủy
+      </button>
+      <button type="button" class="danger-solid-btn" (click)="confirmDelete()" [disabled]="deletingUser">
+        {{ deletingUser ? 'Đang xóa...' : 'Xác nhận xóa' }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,169 @@
+<div class="auth-page">
+  <div class="auth-popup">
+    <div class="auth-side auth-side--visual">
+      <div class="pastel-blob blob-1"></div>
+      <div class="pastel-blob blob-2"></div>
+      <div class="pastel-blob blob-3"></div>
+
+      <div class="visual-inner">
+        <div class="brand">NAVI</div>
+
+        <p class="visual-badge">
+          {{ mode === 'login' ? 'Chào mừng trở lại' : 'Tạo tài khoản mới' }}
+        </p>
+
+        <h1 *ngIf="mode === 'login'">
+          Đăng nhập để tiếp tục hành trình khám phá bản thân
+        </h1>
+
+        <h1 *ngIf="mode === 'register'">
+          Đăng ký để lưu kết quả và trải nghiệm đầy đủ hơn
+        </h1>
+
+        <p class="visual-desc" *ngIf="mode === 'login'">
+          Theo dõi kết quả MBTI, lưu lịch sử làm bài và tiếp tục hành trình định hướng của bạn.
+        </p>
+
+        <p class="visual-desc" *ngIf="mode === 'register'">
+          Tạo không gian cá nhân hóa để lưu lịch sử và đồng bộ trải nghiệm cùng NAVI.
+        </p>
+
+        <div class="mini-tags">
+          <span>Lưu lịch sử</span>
+          <span>Cá nhân hóa</span>
+          <span>MBTI</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-side auth-side--form">
+      <div class="form-wrap">
+        <ng-container *ngIf="mode === 'login'">
+          <div class="form-head">
+            <h2>Đăng nhập</h2>
+            <p>Nhập thông tin tài khoản của bạn</p>
+          </div>
+
+          <p class="success-text" *ngIf="registerSuccess">{{ registerSuccess }}</p>
+          <p class="error-text" *ngIf="err">{{ err }}</p>
+
+          <form (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                [(ngModel)]="email"
+                (ngModelChange)="onEmailInput()"
+                placeholder="you@gmail.com"
+                autocomplete="email"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="password">Mật khẩu</label>
+              <div class="password-wrap">
+                <input
+                  id="password"
+                  [type]="showPassword ? 'text' : 'password'"
+                  name="password"
+                  [(ngModel)]="password"
+                  (ngModelChange)="onPasswordInput()"
+                  placeholder="Nhập mật khẩu"
+                  autocomplete="current-password"
+                />
+                <button type="button" class="toggle-btn" (click)="togglePassword()">
+                  {{ showPassword ? '' : '' }}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="submit-btn" [disabled]="loading">
+              {{ loading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
+            </button>
+          </form>
+
+          <p class="switch-text">
+            Chưa có tài khoản?
+            <button type="button" class="switch-btn" (click)="switchMode('register')">
+              Đăng ký ngay
+            </button>
+          </p>
+        </ng-container>
+
+        <ng-container *ngIf="mode === 'register'">
+          <div class="form-head">
+            <h2>Đăng ký</h2>
+            <p>Tạo tài khoản mới để bắt đầu cùng NAVI</p>
+          </div>
+
+          <p class="error-text" *ngIf="registerErr">{{ registerErr }}</p>
+
+          <form (ngSubmit)="onRegister()" class="auth-form" novalidate>
+            <div class="form-group">
+              <label for="registerName">Họ và tên</label>
+              <input
+                id="registerName"
+                type="text"
+                name="registerName"
+                [(ngModel)]="registerName"
+                placeholder="Nguyễn Văn A"
+                autocomplete="name"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="registerEmail">Email</label>
+              <input
+                id="registerEmail"
+                type="email"
+                name="registerEmail"
+                [(ngModel)]="registerEmail"
+                placeholder="you@gmail.com"
+                autocomplete="email"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="registerPassword">Mật khẩu</label>
+              <div class="password-wrap">
+                <input
+                  id="registerPassword"
+                  [type]="showRegisterPassword ? 'text' : 'password'"
+                  name="registerPassword"
+                  [(ngModel)]="registerPassword"
+                  placeholder="Nhập mật khẩu"
+                  autocomplete="new-password"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="registerPasswordConfirmation">Xác nhận mật khẩu</label>
+              <input
+                id="registerPasswordConfirmation"
+                [type]="showRegisterPassword ? 'text' : 'password'"
+                name="registerPasswordConfirmation"
+                [(ngModel)]="registerPasswordConfirmation"
+                placeholder="Nhập lại mật khẩu"
+                autocomplete="new-password"
+              />
+            </div>
+
+            <button type="submit" class="submit-btn" [disabled]="registerLoading">
+              {{ registerLoading ? 'Đang tạo tài khoản...' : 'Đăng ký' }}
+            </button>
+          </form>
+
+          <p class="switch-text">
+            Đã có tài khoản?
+            <button type="button" class="switch-btn" (click)="switchMode('login')">
+              Đăng nhập
+            </button>
+          </p>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

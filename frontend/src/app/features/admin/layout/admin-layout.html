@@ -1,0 +1,100 @@
+<div class="admin-shell">
+  <aside class="admin-sidebar" [class.open]="sidebarOpen">
+    <div class="admin-brand">
+      <div class="admin-brand__logo">N</div>
+      <div class="admin-brand__text">
+        <strong>NAVI Admin</strong>
+        <span>Trang quản trị hệ thống</span>
+      </div>
+    </div>
+
+    <nav class="admin-menu">
+      <a
+        routerLink="/admin"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeSidebar()"
+      >
+        <span class="menu-icon">◉</span>
+        <span>Tổng quan</span>
+      </a>
+
+      <a routerLink="/admin/users" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="menu-icon">◉</span>
+        <span>Người dùng</span>
+      </a>
+
+      <a routerLink="/admin/packages" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="menu-icon">◉</span>
+        <span>Gói dịch vụ</span>
+      </a>
+
+      <a routerLink="/admin/courses" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="menu-icon">◉</span>
+        <span>Khóa học</span>
+      </a>
+
+
+      <a routerLink="/admin/tests" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="menu-icon">◉</span>
+        <span>Bài test MBTI</span>
+      </a>
+
+      <a routerLink="/admin/majors" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="menu-icon">◉</span>
+        <span>Ngành nghề</span>
+      </a>
+
+      <a routerLink="/admin/admissions" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="menu-icon">◉</span>
+        <span>Tuyển sinh</span>
+      </a>
+
+      <a routerLink="/admin/settings" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="menu-icon">◉</span>
+        <span>Cài đặt</span>
+      </a>
+
+      <button type="button" class="admin-logout" (click)="logout()">
+        <span class="menu-icon">⏻</span>
+        <span>Đăng xuất</span>
+      </button>
+    </nav>
+
+    <div class="admin-sidebar__foot">
+      <div class="admin-mini-card">
+        <strong>Quản trị NAVI</strong>
+        <span>Kiểm soát nội dung và dữ liệu hệ thống</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div class="topbar-left">
+        <button type="button" class="menu-btn" (click)="toggleSidebar()">☰</button>
+
+        <div class="topbar-copy">
+          <strong>Trang quản trị NAVI</strong>
+          <span>Quản lý dữ liệu và nội dung hệ thống</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="admin-user">
+          <span class="admin-user__avatar">A</span>
+          <div class="admin-user__text">
+            <strong>Admin</strong>
+            <span>Quản trị viên</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<div class="admin-overlay" *ngIf="sidebarOpen" (click)="closeSidebar()"></div>

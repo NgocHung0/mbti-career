@@ -1,0 +1,753 @@
+<div class="admin-majors">
+  <div class="page-head">
+    <div>
+      <p class="page-kicker">QUẢN LÝ NGÀNH NGHỀ</p>
+      <h1>Danh sách ngành nghề</h1>
+      <span>Thêm, chỉnh sửa và quản lý dữ liệu ngành nghề hiển thị cho người dùng</span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p>Tổng ngành nghề</p>
+      <h3>{{ totalMajors() }}</h3>
+      <span>Tổng số ngành hiện có trong hệ thống</span>
+    </div>
+
+    <div class="stat-card stat-card--active">
+      <p>Đang hiển thị</p>
+      <h3>{{ activeMajors() }}</h3>
+      <span>Các ngành có trạng thái active</span>
+    </div>
+
+    <div class="stat-card stat-card--inactive">
+      <p>Tạm ẩn</p>
+      <h3>{{ inactiveMajors() }}</h3>
+      <span>Các ngành có trạng thái inactive</span>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-toolbar">
+      <div class="toolbar-left">
+        <div class="search-box">
+          <input
+            type="text"
+            [(ngModel)]="q"
+            placeholder="Tìm theo tên ngành, mã ngành..."
+            (input)="onSearchChange()"
+          />
+        </div>
+
+        <select [(ngModel)]="statusFilter" (change)="onFilterChange()">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="active">Đang hiển thị</option>
+          <option value="inactive">Tạm ẩn</option>
+        </select>
+      </div>
+
+      <div class="toolbar-right">
+        <button class="btn btn-soft" type="button" (click)="resetFilters()">Đặt lại</button>
+        <button class="btn btn-primary" type="button" (click)="openCreate()">+ Thêm ngành nghề</button>
+      </div>
+    </div>
+
+    <div class="state-box" *ngIf="loading">Đang tải danh sách ngành nghề...</div>
+    <div class="state-box error" *ngIf="!loading && error">{{ error }}</div>
+
+    <div class="table-wrap" *ngIf="!loading && !error">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tên ngành</th>
+            <th>Mã</th>
+            <th>Ảnh</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of pagedItems; let i = index; trackBy: trackById">
+            <td>{{ rowNumber(i) }}</td>
+            <td>
+              <div class="cell-title">
+                <strong>{{ item.name }}</strong>
+                <span>{{ item.short_description || item.description || 'Chưa có mô tả' }}</span>
+              </div>
+            </td>
+            <td>{{ item.code || '--' }}</td>
+            <td>
+              <div class="table-thumb">
+                <img [src]="item.image_url || defaultPreview" alt="Ảnh ngành nghề" />
+              </div>
+            </td>
+            <td>
+              <span class="status-pill" [class.inactive]="item.status === 'inactive'">
+                {{ item.status === 'active' ? 'Đang hiển thị' : 'Tạm ẩn' }}
+              </span>
+            </td>
+            
+            <td>{{ formatDate(item.created_at) || '--' }}</td>
+            <td>
+              <div class="row-actions">
+                <button class="action-btn" type="button" (click)="openView(item)">Xem</button>
+                <button class="action-btn edit" type="button" (click)="openEdit(item)">Sửa</button>
+                <button class="action-btn danger" type="button" (click)="openDelete(item)">Xóa</button>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredItems.length === 0">
+            <td colspan="8" class="empty-row">Không có dữ liệu ngành nghề.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="!loading && !error && totalFilteredPages > 1">
+      <button
+        class="page-btn"
+        type="button"
+        (click)="goToPage(currentPage - 1)"
+        [disabled]="currentPage === 1"
+      >
+        Trước
+      </button>
+
+      <button
+        *ngFor="let page of pageNumbers()"
+        class="page-btn"
+        type="button"
+        [class.active]="page === currentPage"
+        [disabled]="page === '...'"
+        (click)="page !== '...' && goToPage(+page)"
+      >
+        {{ page }}
+      </button>
+
+      <button
+        class="page-btn"
+        type="button"
+        (click)="goToPage(currentPage + 1)"
+        [disabled]="currentPage === totalFilteredPages"
+      >
+        Sau
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- VIEW -->
+<div class="modal-shell" *ngIf="showViewModal" (click)="closeView()">
+  <div class="modal-card modal-card--view" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker"></p>
+        <h3></h3>
+      </div>
+      <button class="close-btn" type="button" (click)="closeView()">✕</button>
+    </div>
+
+    <div class="modal-body detail-body" *ngIf="selectedItem as item">
+      <div class="detail-top">
+        <div class="detail-title-wrap">
+          <p class="detail-kicker">THÔNG TIN NGÀNH NGHỀ</p>
+          <h4>{{ item.name }}</h4>
+          <div class="detail-meta-line">
+            <span class="detail-code">{{ item.code || 'Chưa có mã ngành' }}</span>
+            <span class="status-pill" [class.inactive]="item.status === 'inactive'">
+              {{ item.status === 'active' ? 'Đang hiển thị' : 'Tạm ẩn' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-date-box">
+          <span>Ngày tạo</span>
+          <strong>{{ formatDate(item.created_at) || '--' }}</strong>
+        </div>
+      </div>
+        <div class="detail-content">
+        <div class="detail-hero-image">
+          <img [src]="item.image_url || defaultPreview" alt="Ảnh minh họa ngành" />
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-card">
+            <label>Mô tả</label>
+            <p>{{ item.description || 'Chưa có mô tả.' }}</p>
+          </div>
+
+          <div class="detail-card">
+            <label>Triển vọng nghề nghiệp</label>
+            <p>{{ item.career_prospects || 'Chưa cập nhật.' }}</p>
+          </div>
+
+          <div class="detail-card">
+            <label>Kỹ năng</label>
+            <p>{{ item.skills || 'Chưa cập nhật.' }}</p>
+          </div>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <div class="modal-actions">
+      <button class="ghost-btn" type="button" (click)="closeView()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE -->
+<div class="modal-shell" *ngIf="showCreateModal" (click)="closeCreate()">
+  <div class="modal-card modal-card--lg" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">THÊM DỮ LIỆU</p>
+        <h3>Thêm ngành nghề</h3>
+      </div>
+      <button class="close-btn" type="button" (click)="closeCreate()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field">
+          <label>Tên ngành</label>
+          <input type="text" [(ngModel)]="createForm.name" />
+        </div>
+
+        <div class="field">
+          <label>Mã ngành</label>
+          <input
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            [(ngModel)]="createForm.code"
+            (input)="onlyNumberCode(createForm)"
+          />
+        </div>
+
+        <div class="field field-full">
+          <label>Ảnh minh họa ngành</label>
+          <div class="image-upload-box">
+            <div class="image-preview">
+              <img [src]="getCreatePreview()" alt="Preview ảnh ngành" />
+            </div>
+
+            <div class="image-upload-actions">
+              <input
+                #createImageInput
+                class="file-input"
+                type="file"
+                accept="image/*"
+                (change)="onCreateImageChange($event)"
+              />
+
+              <div class="image-upload-buttons">
+                <button class="ghost-btn" type="button" (click)="createImageInput.click()">
+                  Chọn ảnh
+                </button>
+                <button class="ghost-btn danger-ghost" type="button" (click)="clearCreateImage(createImageInput)">
+                  Xóa ảnh
+                </button>
+              </div>
+
+              <span class="image-upload-note">
+                JPG, PNG, WEBP. Nên dùng ảnh ngang, rõ nội dung ngành nghề.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        
+
+        <div class="field field-full">
+          <label>Mô tả</label>
+          <textarea [(ngModel)]="createForm.description"></textarea>
+        </div>
+
+        <div class="field field-full">
+          <label>Triển vọng nghề nghiệp</label>
+          <textarea [(ngModel)]="createForm.career_prospects"></textarea>
+        </div>
+
+        <div class="field field-full">
+          <label>Kỹ năng</label>
+          <textarea [(ngModel)]="createForm.skills"></textarea>
+        </div>
+
+        <div class="field field-full profile-config-box">
+          <h4>Cấu hình gợi ý cá nhân hóa</h4>
+          <p>
+            Các thông tin này dùng cho thuật toán Hybrid Recommendation để so khớp ngành nghề
+            theo MBTI, sở thích và năng lực của người dùng.
+          </p>
+
+          <div class="field field-full">
+            <label>MBTI phù hợp</label>
+            <div class="mbti-checkbox-grid">
+              <label class="mbti-option" *ngFor="let type of mbtiOptions">
+                <input
+                  type="checkbox"
+                  [checked]="isMbtiSelected(createForm, type)"
+                  (change)="toggleMbti(createForm, type, $event)"
+                />
+                <span>{{ type }}</span>
+              </label>
+            </div>
+          </div>
+
+          <h4>Hồ sơ sở thích</h4>
+          <p>Chọn mức độ liên quan của từng nhóm sở thích đối với ngành nghề.</p>
+
+          <div class="profile-grid">
+            <div class="field">
+              <label>Sáng tạo</label>
+              <select [(ngModel)]="createForm.interest_creative">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Phân tích</label>
+              <select [(ngModel)]="createForm.interest_analytic">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Xã hội / giao tiếp</label>
+              <select [(ngModel)]="createForm.interest_social">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Kinh doanh</label>
+              <select [(ngModel)]="createForm.interest_business">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <h4>Hồ sơ năng lực</h4>
+          <p>Chọn mức độ cần thiết của từng nhóm năng lực đối với ngành nghề.</p>
+
+          <div class="profile-grid">
+            <div class="field">
+              <label>Ngôn ngữ</label>
+              <select [(ngModel)]="createForm.ability_LANGUAGE">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Tư duy logic</label>
+              <select [(ngModel)]="createForm.ability_LOGIC">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Sáng tạo</label>
+              <select [(ngModel)]="createForm.ability_CREATIVE">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Công nghệ</label>
+              <select [(ngModel)]="createForm.ability_TECH">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Lãnh đạo</label>
+              <select [(ngModel)]="createForm.ability_LEADERSHIP">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Làm việc nhóm</label>
+              <select [(ngModel)]="createForm.ability_TEAMWORK">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Chi tiết / cẩn thận</label>
+              <select [(ngModel)]="createForm.ability_DETAIL">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Thích nghi</label>
+              <select [(ngModel)]="createForm.ability_ADAPT">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Thực hành</label>
+              <select [(ngModel)]="createForm.ability_PRACTICAL">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Chiến lược</label>
+              <select [(ngModel)]="createForm.ability_STRATEGIC">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field field-full field-status">
+          <label>Trạng thái</label>
+          <select [(ngModel)]="createForm.status">
+            <option value="active">Đang hiển thị</option>
+            <option value="inactive">Tạm ẩn</option>
+          </select>
+        </div>
+
+        
+      </div>
+
+      <p class="modal-error" *ngIf="createError">{{ createError }}</p>
+
+      <div class="modal-actions">
+        <button class="ghost-btn" type="button" (click)="closeCreate()" [disabled]="creating || createAiLoading">Hủy</button>
+        <button class="primary-btn" type="button" (click)="saveCreate()" [disabled]="creating || createAiLoading">
+          {{ creating ? 'Đang lưu...' : 'Lưu ngành nghề' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT -->
+<div class="modal-shell" *ngIf="showEditModal" (click)="closeEdit()">
+  <div class="modal-card modal-card--lg" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">CẬP NHẬT DỮ LIỆU</p>
+        <h3>Cập nhật ngành nghề</h3>
+      </div>
+      <button class="close-btn" type="button" (click)="closeEdit()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field">
+          <label>Tên ngành</label>
+          <input type="text" [(ngModel)]="editForm.name" />
+        </div>
+
+        <div class="field">
+          <label>Mã ngành</label>
+          <input
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            [(ngModel)]="editForm.code"
+            (input)="onlyNumberCode(editForm)"
+           />
+        </div>
+
+        <div class="field field-full">
+          <label>Ảnh minh họa ngành</label>
+          <div class="image-upload-box">
+            <div class="image-preview">
+              <img [src]="getEditPreview()" alt="Preview ảnh ngành" />
+            </div>
+
+            <div class="image-upload-actions">
+              <input
+                #editImageInput
+                class="file-input"
+                type="file"
+                accept="image/*"
+                (change)="onEditImageChange($event)"
+              />
+
+              <div class="image-upload-buttons">
+                <button class="ghost-btn" type="button" (click)="editImageInput.click()">
+                  Chọn ảnh mới
+                </button>
+                <button class="ghost-btn danger-ghost" type="button" (click)="clearEditImage(editImageInput)">
+                  Bỏ ảnh mới
+                </button>
+              </div>
+
+              <span class="image-upload-note">
+                Nếu không chọn ảnh mới, hệ thống sẽ giữ nguyên ảnh cũ.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        
+
+        <div class="field field-full">
+          <label>Mô tả</label>
+          <textarea [(ngModel)]="editForm.description"></textarea>
+        </div>
+
+        <div class="field field-full">
+          <label>Triển vọng nghề nghiệp</label>
+          <textarea [(ngModel)]="editForm.career_prospects"></textarea>
+        </div>
+
+        <div class="field field-full">
+          <label>Kỹ năng</label>
+          <textarea [(ngModel)]="editForm.skills"></textarea>
+        </div>
+        
+        <div class="field field-full profile-config-box">
+          <h4>Cấu hình gợi ý cá nhân hóa</h4>
+          <p>
+            Các thông tin này dùng cho thuật toán Hybrid Recommendation để so khớp ngành nghề
+            theo MBTI, sở thích và năng lực của người dùng.
+          </p>
+
+          <div class="field field-full">
+            <label>MBTI phù hợp</label>
+            <div class="mbti-checkbox-grid">
+              <label class="mbti-option" *ngFor="let type of mbtiOptions">
+                <input
+                  type="checkbox"
+                  [checked]="isMbtiSelected(editForm, type)"
+                  (change)="toggleMbti(editForm, type, $event)"
+                />
+                <span>{{ type }}</span>
+              </label>
+            </div>
+          </div>
+
+          <h4>Hồ sơ sở thích</h4>
+          <p>Chọn mức độ liên quan của từng nhóm sở thích đối với ngành nghề.</p>
+
+          <div class="profile-grid">
+            <div class="field">
+              <label>Sáng tạo</label>
+              <select [(ngModel)]="editForm.interest_creative">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Phân tích</label>
+              <select [(ngModel)]="editForm.interest_analytic">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Xã hội / giao tiếp</label>
+              <select [(ngModel)]="editForm.interest_social">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Kinh doanh</label>
+              <select [(ngModel)]="editForm.interest_business">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <h4>Hồ sơ năng lực</h4>
+          <p>Chọn mức độ cần thiết của từng nhóm năng lực đối với ngành nghề.</p>
+
+          <div class="profile-grid">
+            <div class="field">
+              <label>Ngôn ngữ</label>
+              <select [(ngModel)]="editForm.ability_LANGUAGE">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Tư duy logic</label>
+              <select [(ngModel)]="editForm.ability_LOGIC">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Sáng tạo</label>
+              <select [(ngModel)]="editForm.ability_CREATIVE">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Công nghệ</label>
+              <select [(ngModel)]="editForm.ability_TECH">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Lãnh đạo</label>
+              <select [(ngModel)]="editForm.ability_LEADERSHIP">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Làm việc nhóm</label>
+              <select [(ngModel)]="editForm.ability_TEAMWORK">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Chi tiết / cẩn thận</label>
+              <select [(ngModel)]="editForm.ability_DETAIL">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Thích nghi</label>
+              <select [(ngModel)]="editForm.ability_ADAPT">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Thực hành</label>
+              <select [(ngModel)]="editForm.ability_PRACTICAL">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Chiến lược</label>
+              <select [(ngModel)]="editForm.ability_STRATEGIC">
+                <option *ngFor="let option of profileLevelOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field field-full field-status">
+          <label>Trạng thái</label>
+          <select [(ngModel)]="editForm.status">
+            <option value="active">Đang hiển thị</option>
+            <option value="inactive">Tạm ẩn</option>
+          </select>
+        </div>
+
+       
+      </div>
+
+      <p class="modal-error" *ngIf="editError">{{ editError }}</p>
+
+      <div class="modal-actions">
+        <button class="ghost-btn" type="button" (click)="closeEdit()" [disabled]="updating || editAiLoading">Hủy</button>
+        <button class="primary-btn" type="button" (click)="saveEdit()" [disabled]="updating || editAiLoading">
+          {{ updating ? 'Đang lưu...' : 'Lưu thay đổi' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE -->
+<div class="modal-shell" *ngIf="showDeleteModal" (click)="closeDelete()">
+  <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">XÁC NHẬN XÓA</p>
+        <h3>Xóa ngành nghề</h3>
+      </div>
+      <button class="close-btn" type="button" (click)="closeDelete()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="delete-box">
+        <p>
+          Bạn có chắc muốn xóa ngành
+          <strong>{{ selectedItem?.name }}</strong>
+          không?
+        </p>
+        <span>Hành động này không thể hoàn tác.</span>
+      </div>
+
+      <p class="modal-error" *ngIf="deleteError">{{ deleteError }}</p>
+
+      <div class="modal-actions">
+        <button class="ghost-btn" type="button" (click)="closeDelete()" [disabled]="deleting">Hủy</button>
+        <button class="danger-solid-btn" type="button" (click)="confirmDelete()" [disabled]="deleting">
+          {{ deleting ? 'Đang xóa...' : 'Xóa ngành nghề' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

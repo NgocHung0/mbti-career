@@ -1,0 +1,137 @@
+<div class="about-settings-page">
+  <div class="page-head">
+    <div class="page-head__left">
+      <div class="page-kicker">Cài đặt hệ thống</div>
+      <h1>Quản lý nội dung trang Về chúng tôi</h1>
+      <p>Chỉnh sửa từng mục: Giới thiệu, Sứ mệnh, Tầm nhìn, Chính sách bảo mật, thống kê và hình ảnh.</p>
+    </div>
+  </div>
+
+  <div class="alert-stack" *ngIf="successMessage() || errorMessage()">
+    <div class="alert alert--success" *ngIf="successMessage()">
+      {{ successMessage() }}
+    </div>
+
+    <div class="alert alert--error" *ngIf="errorMessage()">
+      {{ errorMessage() }}
+    </div>
+  </div>
+
+  <div class="loading-box" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Đang tải dữ liệu...</p>
+  </div>
+
+  <ng-container *ngIf="!loading()">
+    <form [formGroup]="form" class="settings-layout">
+
+      <section class="content-card section-01">
+        <div class="card-head">
+          <div>
+            <span class="section-number">01</span>
+            <h2>Giới thiệu</h2>
+            <p>Nội dung giới thiệu chính hiển thị ở trang Về chúng tôi.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label for="hero_title">Tiêu đề chính</label>
+            <input id="hero_title" type="text" formControlName="hero_title" placeholder="Ví dụ: Về NAVI" />
+          </div>
+
+          <div class="form-field form-field--full">
+            <label for="short_description">Mô tả ngắn</label>
+            <textarea id="short_description" rows="3" formControlName="short_description"></textarea>
+          </div>
+
+          <div class="form-field form-field--full">
+            <label for="full_description">Nội dung giới thiệu chi tiết</label>
+            <textarea id="full_description" rows="6" formControlName="full_description"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-card section-02">
+        <div class="card-head">
+          <div>
+            <span class="section-number">02</span>
+            <h2>Sứ mệnh</h2>
+            <p>Thông điệp NAVI muốn mang lại cho người dùng.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label for="mission_title">Tiêu đề sứ mệnh</label>
+            <input id="mission_title" type="text" formControlName="mission_title" placeholder="Ví dụ: Sứ mệnh của NAVI" />
+          </div>
+
+          <div class="form-field form-field--full">
+            <label for="mission_description">Nội dung sứ mệnh</label>
+            <textarea id="mission_description" rows="5" formControlName="mission_description"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-card section-03">
+        <div class="card-head">
+          <div>
+            <span class="section-number">03</span>
+            <h2>Tầm nhìn</h2>
+            <p>Định hướng phát triển lâu dài của hệ thống.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label for="vision_title">Tiêu đề tầm nhìn</label>
+            <input id="vision_title" type="text" formControlName="vision_title" placeholder="Ví dụ: Tầm nhìn tương lai" />
+          </div>
+
+          <div class="form-field form-field--full">
+            <label for="vision_description">Nội dung tầm nhìn</label>
+            <textarea id="vision_description" rows="5" formControlName="vision_description"></textarea>
+          </div>
+        </div>
+      </section>
+
+<section class="content-card section-04">
+
+    <div class="card-head">
+        <div>
+            <span class="section-number">04</span>
+            <h2>Chính sách bảo mật</h2>
+            <p>Nội dung hiển thị ở trang người dùng.</p>
+        </div>
+    </div>
+
+    <div class="form-grid">
+
+        <div class="form-field form-field--full">
+            <label>Chính sách bảo mật</label>
+
+            <textarea
+                rows="10"
+                formControlName="privacy_policy"
+                placeholder="Nhập nội dung chính sách bảo mật..."
+            >
+            </textarea>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+      <div class="page-footer-actions">
+        <button type="button" class="btn btn--primary" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Đang lưu...' : 'Lưu thay đổi' }}
+        </button>
+      </div>
+
+    </form>
+  </ng-container>
+</div>

@@ -1,0 +1,433 @@
+<div class="courses-page">
+  <section class="course-lock-screen" *ngIf="!canAccessCourses()">
+    <div class="course-lock-box">
+      <span class="course-lock-badge">KHÓA HỌC PREMIUM</span>
+      <h2>Mục khóa học chỉ dành cho gói nâng cao 39k</h2>
+      <p>
+        Tài khoản free và gói cơ bản hiện chưa được mở quyền truy cập các gói khóa học.
+        Hãy nâng cấp lên gói nâng cao để mở khóa toàn bộ nội dung học trên hệ thống.
+      </p>
+
+      <div class="course-lock-actions">
+        <button type="button" class="btn-detail" *ngIf="isLoggedIn()" (click)="goUpgradePlan()">
+          Nâng cấp gói
+        </button>
+
+        <button type="button" class="btn-login-open" *ngIf="!isLoggedIn()" (click)="goLogin()">
+          Đăng nhập để nâng cấp
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="courses-content-wrap" [class.is-locked]="!canAccessCourses()">
+
+      <section class="toolbar-card">
+        <div class="toolbar">
+          <div class="toolbar__search">
+            <input #keywordInput type="text" class="search-input" placeholder="Tìm khóa học hoặc bài học..."
+              [value]="keyword()" (input)="setKeyword(keywordInput.value)" />
+          </div>
+
+          <div class="toolbar__meta">
+            <span class="result-count">
+              {{ purchasedCourses().length }} khóa học
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block" *ngIf="loadingCourses()">
+        <div class="empty-state">
+          <div class="empty-state__box">
+            <h3>Đang tải khóa học...</h3>
+            <p>Hệ thống đang lấy dữ liệu khóa học và bài học từ API.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block" *ngIf="!loadingCourses() && loadError()">
+        <div class="empty-state">
+          <div class="empty-state__box">
+            <h3>Không tải được dữ liệu</h3>
+            <p>{{ loadError() }}</p>
+            <button type="button" class="btn-detail" (click)="reloadCourses()">
+              Tải lại
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <ng-container *ngIf="!loadingCourses() && !loadError()">
+        <section class="section-block" *ngIf="purchasedCourses().length; else emptyPurchasedBlock">
+          <div class="course-grid">
+            <article
+              class="course-card course-card--owned"
+              *ngFor="let item of paginatedPurchasedCourses()"
+              (click)="openLearningPopup(item)"
+            >
+              <div class="course-thumb">
+                <img *ngIf="item.thumbnail" [src]="item.thumbnail" [alt]="item.name" />
+              </div>
+
+              <div class="course-body">
+
+                <h3>{{ item.name }}</h3>
+
+                <p class="course-description">
+                  {{ item.short_description || item.description || 'Khóa học này hiện chưa có mô tả.' }}
+                </p>
+
+                <div class="course-bottom">
+
+                  <button
+                    type="button"
+                    class="btn-detail"
+                    (click)="openLearningPopup(item); $event.stopPropagation()"
+                  >
+                    Học ngay
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="pagination" *ngIf="totalCoursePages() > 1">
+            <button
+              type="button"
+              class="page-btn"
+              (click)="prevCoursePage()"
+              [disabled]="coursePage() === 1"
+            >
+              Trước
+            </button>
+
+            <button
+              type="button"
+              class="page-btn"
+              *ngFor="let page of coursePageNumbers()"
+              [class.active]="page === coursePage()"
+              (click)="goToCoursePage(page)"
+            >
+              {{ page }}
+            </button>
+
+            <button
+              type="button"
+              class="page-btn"
+              (click)="nextCoursePage()"
+              [disabled]="coursePage() === totalCoursePages()"
+            >
+              Sau
+            </button>
+          </div>
+        </section>
+
+        <ng-template #emptyPurchasedBlock>
+          <div class="empty-state">
+            <div class="empty-state__box">
+              <h3>Chưa có khóa học nào khả dụng</h3>
+              <p>Hiện hệ thống chưa có khóa học nào hiển thị cho gói của bạn.</p>
+            </div>
+          </div>
+        </ng-template>
+      </ng-container>
+
+      <div class="preview-modal" *ngIf="canAccessCourses() && showPurchasedPopup()" (click)="closePurchasedPopup()">
+        <div class="owned-popup-box" (click)="$event.stopPropagation()">
+          <div class="owned-popup-head">
+            <div>
+              <h2>Tất cả khóa học của gói 39k</h2>
+              <p>Nhấn vào từng khóa học để học ngay.</p>
+            </div>
+
+            <button type="button" class="learning-close" (click)="closePurchasedPopup()">
+              ×
+            </button>
+          </div>
+
+          <div class="owned-popup-grid">
+            <article class="course-card course-card--owned" *ngFor="let item of paginatedPurchasedCourses()"
+              (click)="openLearningPopup(item); closePurchasedPopup()">
+              <div class="course-thumb">
+                <img *ngIf="item.thumbnail" [src]="item.thumbnail" [alt]="item.name">
+              </div>
+
+              <div class="course-body">
+
+                <h3>{{ item.name }}</h3>
+
+                <p class="course-description">
+                  {{ item.short_description || item.description || 'Khóa học này hiện chưa có mô tả.' }}
+                </p>
+
+                <div class="course-bottom">
+                  <button type="button" class="btn-detail"
+                    (click)="openLearningPopup(item); closePurchasedPopup(); $event.stopPropagation()">
+                    Học ngay
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div class="learning-modal" *ngIf="canAccessCourses() && showLearningModal()" (click)="closeLearningPopup()">
+        <div class="learning-box" (click)="$event.stopPropagation()">
+          <div class="learning-header">
+            <div class="learning-header__info">
+              <span class="learning-header__badge">Đang học</span>
+              <h2>{{ learningCourse()?.name || 'Chi tiết khóa học' }}</h2>
+              <p>
+                {{ learningCourse()?.short_description || learningCourse()?.description || 'Chọn bài học ở cột trái để
+                xem video.' }}
+              </p>
+            </div>
+
+            <button type="button" class="learning-close" (click)="closeLearningPopup()">
+              ×
+            </button>
+          </div>
+
+          <div class="learning-content">
+            <aside class="learning-sidebar">
+              <div class="learning-sidebar__title">
+                Danh sách bài học
+              </div>
+
+              <div class="learning-lessons" *ngIf="learningLessons().length; else noLessonBlock">
+                <button type="button" class="learning-lesson-item"
+                  *ngFor="let lesson of learningLessons(); let i = index"
+                  [class.is-active]="selectedLesson()?.id === lesson.id"
+                  [class.is-completed]="isLessonCompleted(lesson.id)" (click)="selectLesson(lesson)">
+                  <span class="learning-lesson-check" *ngIf="isLessonCompleted(lesson.id)" aria-label="Đã hoàn thành"
+                    title="Đã hoàn thành">
+                    ✓
+                  </span>
+
+                  <div class="learning-lesson-item__top">
+                    <span class="learning-lesson-order">Bài {{ lesson.sort_order || (i + 1) }}</span>
+                    <span class="learning-lesson-duration" *ngIf="lesson.duration">{{ lesson.duration }}</span>
+                  </div>
+
+                  <strong>{{ lesson.title || ('Bài học ' + (i + 1)) }}</strong>
+                  <p>{{ lesson.description || 'Chưa có mô tả bài học.' }}</p>
+                </button>
+              </div>
+
+              <ng-template #noLessonBlock>
+                <div class="learning-empty">
+                  Chưa có bài học trong gói này.
+                </div>
+              </ng-template>
+            </aside>
+
+            <section class="learning-video-panel">
+              <div class="learning-video-panel__head">
+                <div>
+                  <span class="video-panel-label">Bài học hiện tại</span>
+                  <h3>{{ selectedLesson()?.title || 'Chưa chọn bài học' }}</h3>
+                </div>
+
+                <div class="video-status-wrap">
+                  <span class="video-status video-status--completed" *ngIf="selectedLessonCompleted()">
+                    Đã hoàn thành
+                  </span>
+
+                  <span class="video-status" *ngIf="!selectedLessonCompleted() && selectedLesson()?.is_active">
+                    Đang bật
+                  </span>
+                </div>
+              </div>
+
+              <p class="learning-video-panel__desc">
+                {{ selectedLesson()?.description || 'Chọn một bài học bên trái để phát video.' }}
+              </p>
+
+              <div class="video-frame-wrap" *ngIf="hasPlayableVideo(); else noVideoTemplate"
+                [class.is-youtube]="isSelectedLessonYoutube()">
+                <div class="video-frame-shell">
+                  <div *ngIf="isSelectedLessonYoutube(); else fallbackVideoBlock" id="youtube-player-host"
+                    class="video-frame video-frame--youtube"></div>
+
+                  <ng-template #fallbackVideoBlock>
+                    <iframe class="video-frame" [src]="fallbackVideoUrl()" title="Video bài học" frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen></iframe>
+                  </ng-template>
+                </div>
+              </div>
+
+              <ng-template #noVideoTemplate>
+                <div class="video-empty">
+                  <h4>Chưa có video hiển thị</h4>
+                  <p>Bài học này chưa có link video hợp lệ hoặc bạn chưa chọn bài học.</p>
+                </div>
+              </ng-template>
+
+              <div class="lesson-questions" *ngIf="selectedLessonCompleted()">
+                <div class="lesson-questions__head">
+                  <h4>Câu hỏi bài học</h4>
+                  <p *ngIf="hasLessonQuestions()">
+                    Chọn đáp án bình thường, có thể đổi đáp án trước khi nộp. Kết quả chỉ hiển thị sau khi bấm nộp bài.
+                  </p>
+                  <p *ngIf="!hasLessonQuestions()">
+                    Bài học này hiện chưa có câu hỏi nào được lưu trong database.
+                  </p>
+                </div>
+
+                <div class="question-list" *ngIf="hasLessonQuestions(); else noQuestionBlock">
+                  <article class="question-card"
+                    *ngFor="let item of selectedLessonQuestions(); let qIndex = index; trackBy: trackByQuestionIndex">
+                    <div class="question-card__head">
+                      <span class="question-index">Câu {{ qIndex + 1 }}</span>
+                      <h5>{{ item.question }}</h5>
+                    </div>
+
+                    <div class="question-options question-options--grid"
+                      *ngIf="item.options.length; else noOptionBlock">
+                      <button type="button" class="question-option"
+                        *ngFor="let option of item.options; let oIndex = index; trackBy: trackByOptionIndex"
+                        [class.is-selected]="isOptionSelected(item, qIndex, oIndex)"
+                        [class.is-correct]="isOptionCorrect(item, qIndex, oIndex)"
+                        [class.is-wrong]="isSelectedOptionWrong(item, qIndex, oIndex)"
+                        [class.is-locked]="isQuestionLocked(item, qIndex)" [disabled]="isQuestionLocked(item, qIndex)"
+                        (click)="selectQuestionOption(item, qIndex, oIndex)">
+                        <span class="question-option__label">
+                          {{ ['A', 'B', 'C', 'D', 'E', 'F'][oIndex] || (oIndex + 1) }}
+                        </span>
+
+                        <span class="question-option__text">{{ option.content }}</span>
+
+                        <span class="question-option__status" *ngIf="isOptionCorrect(item, qIndex, oIndex)">
+                          Đúng
+                        </span>
+
+                        <span class="question-option__status question-option__status--wrong"
+                          *ngIf="isSelectedOptionWrong(item, qIndex, oIndex)">
+                          Sai
+                        </span>
+                      </button>
+                    </div>
+
+                    <ng-template #noOptionBlock>
+                      <div class="question-empty-option">
+                        Câu hỏi này chưa có đáp án lựa chọn.
+                      </div>
+                    </ng-template>
+
+                    <div class="question-result" *ngIf="isQuestionLocked(item, qIndex)"
+                      [class.is-correct]="getQuestionResultClass(item, qIndex) === 'is-correct'"
+                      [class.is-wrong]="getQuestionResultClass(item, qIndex) === 'is-wrong'">
+                      {{ getQuestionResultText(item, qIndex) }}
+                    </div>
+
+                    <div class="question-explanation" *ngIf="item.explanation && isQuestionLocked(item, qIndex)">
+                      <strong>Giải thích:</strong>
+                      <span>{{ item.explanation }}</span>
+                    </div>
+                  </article>
+                <div class="lesson-submit-box">
+                  <div class="lesson-submit-info">
+                    <strong>
+                      Đã chọn {{ selectedLessonAnsweredCount() }}/{{ selectedLessonQuestionCount() }} câu
+                    </strong>
+
+                    <span *ngIf="!selectedLessonSubmitted()">
+                      Chọn đủ đáp án rồi bấm nộp bài để xem kết quả.
+                    </span>
+
+                    <span *ngIf="selectedLessonSubmitted()">
+                      Bài làm đã được nộp. Bạn có thể xem kết quả bên trên.
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="lesson-submit-btn"
+                    [disabled]="!canSubmitSelectedLesson()"
+                    (click)="confirmSubmitSelectedLesson()">
+                    Nộp bài
+                  </button>
+                </div>
+              </div>
+
+                <ng-template #noQuestionBlock>
+                  <div class="questions-empty-state">
+                    Chưa có câu hỏi nào cho bài học này.
+                  </div>
+                </ng-template>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div class="floating-alert" *ngIf="showAlert()" [class.is-success]="alertType() === 'success'"
+        [class.is-error]="alertType() === 'error'" [class.is-info]="alertType() === 'info'">
+        <div class="floating-alert__icon">
+          <span *ngIf="alertType() === 'success'">✓</span>
+          <span *ngIf="alertType() === 'error'">!</span>
+          <span *ngIf="alertType() === 'info'">i</span>
+        </div>
+
+        <div class="floating-alert__content">
+          <strong>{{ alertTitle() }}</strong>
+          <p>
+            {{ alertMessage() }}
+            <span *ngIf="alertCountdown() > 0"> {{ alertCountdown() }}s.</span>
+          </p>
+        </div>
+
+        <button type="button" class="floating-alert__close" (click)="closeAlert()">
+          ×
+        </button>
+      </div>
+  </div>
+<div
+  class="submit-confirm-modal"
+  *ngIf="showSubmitConfirmModal()"
+  (click)="closeSubmitConfirmModal()"
+>
+  <div class="submit-confirm-box" (click)="$event.stopPropagation()">
+    <div class="submit-confirm-icon">
+      ?
+    </div>
+
+    <h3>Xác nhận nộp bài</h3>
+
+    <p>
+      Sau khi nộp bài, bạn sẽ không thể thay đổi đáp án. Bạn có chắc chắn muốn nộp bài không?
+    </p>
+
+    <div class="submit-confirm-summary">
+      <span>
+        Đã chọn:
+        <strong>{{ selectedLessonAnsweredCount() }}/{{ selectedLessonQuestionCount() }}</strong>
+        câu
+      </span>
+    </div>
+
+    <div class="submit-confirm-actions">
+      <button
+        type="button"
+        class="submit-confirm-cancel"
+        [disabled]="submittingLessonQuiz()"
+        (click)="closeSubmitConfirmModal()"
+      >
+        Hủy
+      </button>
+
+      <button
+        type="button"
+        class="submit-confirm-ok"
+        [disabled]="submittingLessonQuiz()"
+        (click)="confirmSubmitFromPopup()"
+      >
+        {{ submittingLessonQuiz() ? 'Đang nộp...' : 'Nộp bài' }}
+      </button>
+    </div>
+  </div>
+</div>
+</div>

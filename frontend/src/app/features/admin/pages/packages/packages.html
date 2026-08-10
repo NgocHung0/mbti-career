@@ -1,0 +1,306 @@
+<div class="page-head">
+  <div>
+    <h1>Danh sách gói dịch vụ</h1>
+    <span></span>
+  </div>
+</div>
+
+<section class="packages-page">
+  <div class="toolbar">
+    <div class="search-box">
+      <input
+        #kwInput
+        type="text"
+        placeholder="Tìm theo tên gói, slug, mô tả..."
+        [value]="keyword()"
+        (input)="setKeyword(kwInput.value)"
+      />
+    </div>
+
+    <div class="page-head__right">
+      <button type="button" class="primary-btn" (click)="openCreateModal()">
+        Thêm gói dịch vụ
+      </button>
+    </div>
+
+    <div class="toolbar-meta">
+      <span>Tổng: {{ filteredPackages().length }} gói dịch vụ</span>
+    </div>
+  </div>
+
+  <div class="alert success" *ngIf="successMessage()">
+    {{ successMessage() }}
+  </div>
+
+  <div class="alert error" *ngIf="errorMessage()">
+    {{ errorMessage() }}
+  </div>
+
+  <div class="table-card">
+    <div class="table-loading" *ngIf="loading()">Đang tải dữ liệu...</div>
+
+    <div class="table-wrap" *ngIf="!loading()">
+      <table class="packages-table" *ngIf="filteredPackages().length > 0; else emptyState">
+        <thead>
+          <tr>
+            <th class="col-order">Thứ tự</th>
+            <th>Tên gói dịch vụ</th>
+            <th>Giá</th>
+            <th>Loại gói</th>
+            <th>Trạng thái</th>
+            <th>Quyền lợi</th>
+            <th class="col-actions">Thao tác</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of filteredPackages(); trackBy: trackById">
+            <td class="col-order">
+              <div class="order-badge">
+                {{ item.sort_order }}
+              </div>
+            </td>
+
+            <td>
+              <div class="pkg-main">
+                <div class="pkg-name">{{ item.name }}</div>
+
+                <div class="pkg-sub" *ngIf="item.slug">
+                  {{ item.slug }}
+                </div>
+
+                <div class="pkg-desc" *ngIf="item.short_description">
+                  {{ item.short_description }}
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div class="price-text">{{ item.price | number:'1.0-0' }}đ</div>
+            </td>
+
+            <td>
+              <div class="feature-list">
+                <span
+                  class="theme-chip"
+                  [attr.data-theme]="item.theme || 'green'"
+                >
+                  {{ getPackageTypeLabel(item) }}
+                </span>
+
+                <span class="feature-pill">
+                  {{ getTestSummary(item) }}
+                </span>
+              </div>
+            </td>
+
+            <td>
+              <span
+                class="status-pill"
+                [class.active]="item.is_active"
+                [class.inactive]="!item.is_active"
+              >
+                {{ item.is_active ? 'Đang bật' : 'Đang tắt' }}
+              </span>
+            </td>
+
+            <td>
+              <div class="feature-list">
+                <span class="feature-pill subtle" *ngFor="let feature of getAccessSummary(item)">
+                  {{ feature }}
+                </span>
+
+                <span class="feature-pill featured" *ngIf="item.is_featured">
+                  Nổi bật
+                </span>
+              </div>
+            </td>
+
+            <td class="col-actions">
+              <div class="row-actions">
+                <button type="button" class="ghost-btn" (click)="openEditModal(item)">
+                  Sửa
+                </button>
+
+                <button
+                  type="button"
+                  class="danger-btn"
+                  [disabled]="deletingId() === item.id"
+                  (click)="remove(item)"
+                >
+                  {{ deletingId() === item.id ? 'Đang xóa...' : 'Xóa' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <div class="empty-state__title">Chưa có gói dịch vụ nào</div>
+          <div class="empty-state__text">
+            Bạn có thể tự tạo bất kỳ gói nào theo nhu cầu, không bị giới hạn 2 gói cố định.
+          </div>
+          <button type="button" class="primary-btn" (click)="openCreateModal()">
+            Tạo gói dịch vụ đầu tiên
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</section>
+
+<div class="modal-backdrop" *ngIf="showModal()" (click)="closeModal()"></div>
+
+<section class="modal-shell" *ngIf="showModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div>
+        <div class="modal-badge">{{ editingId() ? 'Chỉnh sửa' : 'Thêm mới' }}</div>
+        <h2>{{ editingId() ? 'Cập nhật gói dịch vụ' : 'Tạo gói dịch vụ' }}</h2>
+      </div>
+
+      <button type="button" class="close-btn" (click)="closeModal()">Đóng</button>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="modal-body">
+      <div class="form-grid">
+        <div class="field field-span-2">
+          <label>Tên gói dịch vụ <span>*</span></label>
+          <input
+            type="text"
+            formControlName="name"
+            placeholder="Ví dụ: Gói test tính cách"
+          />
+          <small class="error-text" *ngIf="form.controls.name.touched && form.controls.name.invalid">
+            Vui lòng nhập tên gói.
+          </small>
+        </div>
+
+        <div class="field">
+          <label>Slug</label>
+          <input type="text" formControlName="slug" placeholder="goi-test-tinh-cach" />
+        </div>
+
+        <div class="field">
+          <label>Badge text</label>
+          <input type="text" formControlName="badge_text" placeholder="Hot / Phổ biến / Mới" />
+        </div>
+
+        <div class="field">
+          <label>Theme</label>
+          <select formControlName="theme">
+            <option *ngFor="let theme of themes" [value]="theme">
+              {{ theme }}
+            </option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Giá <span>*</span></label>
+          <input type="number" formControlName="price" min="0" placeholder="99000" />
+        </div>
+
+        <div class="field field-span-2">
+          <label>Mô tả ngắn</label>
+          <input
+            type="text"
+            formControlName="short_description"
+            placeholder="Mô tả ngắn gọn về gói"
+          />
+        </div>
+
+        <div class="field field-span-2">
+          <label>Mô tả dài</label>
+          <textarea
+            rows="4"
+            formControlName="description"
+            placeholder="Nhập mô tả chi tiết..."
+          ></textarea>
+        </div>
+
+        <div class="field field-span-2">
+          <label>Sắp xếp vị trí hiển thị</label>
+          <div class="sort-helper">
+            Vị trí hiện tại:
+            <strong>Thứ {{ currentSortPosition() }}</strong>.
+            Kéo thả dòng có nhãn
+            <strong>{{ editingId() ? 'Đang sửa' : 'Đang tạo' }}</strong>
+            để đổi vị trí.
+          </div>
+
+          <div
+            class="sort-board"
+            cdkDropList
+            [cdkDropListData]="sortPreview()"
+            (cdkDropListDropped)="onSortDrop($event)"
+          >
+            <div
+              class="sort-item"
+              *ngFor="let row of sortPreview(); let i = index; trackBy: trackSortPreview"
+              cdkDrag
+              [class.is-draft]="row.isDraft"
+            >
+              <div class="sort-item__index">
+                {{ i + 1 }}
+              </div>
+
+              <div class="sort-item__content">
+                <div class="sort-item__title">
+                  {{ row.name }}
+                </div>
+
+                <div class="sort-item__meta">
+                  <span class="sort-item__flag sort-item__flag--draft" *ngIf="row.isDraft">
+                    {{ editingId() ? 'Đang sửa' : 'Đang tạo' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="sort-item__drag">⋮⋮</div>
+            </div>
+          </div>
+
+          <input type="hidden" formControlName="sort_order" />
+        </div>
+
+        <div class="field field-span-2 package-note">
+          <div class="package-note__title">Quyền lợi của gói</div>
+
+          <div class="check-grid">
+            <label class="check-item">
+              <input type="checkbox" formControlName="include_interest_test" />
+              <span>Có bài test tính cách</span>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" formControlName="include_ability_test" />
+              <span>Có bài test năng lực</span>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" formControlName="is_active" />
+              <span>Đang bật</span>
+            </label>
+
+            <label class="check-item">
+              <input type="checkbox" formControlName="is_featured" />
+              <span>Nổi bật</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button type="button" class="ghost-btn" (click)="closeModal()">
+          Hủy
+        </button>
+
+        <button type="submit" class="primary-btn" [disabled]="saving()">
+          {{ saving() ? 'Đang lưu...' : (editingId() ? 'Cập nhật gói' : 'Tạo gói') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

@@ -1,0 +1,172 @@
+<div class="mbti-admin-page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <p class="page-kicker">QUẢN LÝ NỘI DUNG</p>
+      <h1>Quản lý 16 nhóm MBTI</h1>
+      <p class="page-desc">
+        Tạo, chỉnh sửa và quản lý nội dung hồ sơ của từng nhóm MBTI để dùng ở trang kết quả.
+      </p>
+    </div>
+
+    <button type="button" class="add-btn" (click)="openCreateModal()">
+      + Thêm nhóm MBTI
+    </button>
+  </div>
+
+  <div class="toolbar-card">
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="Tìm theo mã, tên hoặc mô tả..."
+        [(ngModel)]="keyword"
+        (ngModelChange)="onSearchChange()"
+      />
+    </div>
+
+    <div class="toolbar-meta">
+      Tổng: <strong>{{ filteredItems.length }}</strong> nhóm
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="alert success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <div class="table-card">
+    <div class="table-head">
+      <div class="head-cell code">Mã</div>
+      <div class="head-cell name">Tên nhóm</div>
+      <div class="head-cell desc">Mô tả</div>
+      <div class="head-cell status">Trạng thái</div>
+      <div class="head-cell action">Thao tác</div>
+    </div>
+
+    <div class="loading-wrap" *ngIf="loading">
+      Đang tải dữ liệu nhóm MBTI...
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <div class="table-row" *ngFor="let item of filteredItems; trackBy: trackById">
+        <div class="cell code">
+          <span class="code-badge">{{ item.code }}</span>
+        </div>
+
+        <div class="cell name">
+          <div class="name-main">{{ item.name || 'Chưa cập nhật' }}</div>
+        </div>
+
+        <div class="cell desc">
+          <div class="desc-text">
+            {{ item.description || 'Chưa có mô tả' }}
+          </div>
+        </div>
+
+        <div class="cell status">
+          <span class="status-badge active">Đã cấu hình</span>
+        </div>
+
+        <div class="cell action">
+          <button
+            type="button"
+            class="action-btn edit"
+            (click)="openEditModal(item)">
+            Sửa
+          </button>
+
+          <button
+            type="button"
+            class="action-btn delete"
+            (click)="deleteItem(item)"
+            [disabled]="deletingId === item.id">
+            {{ deletingId === item.id ? 'Đang xóa...' : 'Xóa' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!filteredItems.length">
+        {{ emptyStateText }}
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">{{ isEditMode ? 'CHỈNH SỬA' : 'THÊM MỚI' }}</p>
+        <h2>{{ isEditMode ? 'Cập nhật nhóm MBTI' : 'Thêm nhóm MBTI' }}</h2>
+      </div>
+
+      <button
+        type="button"
+        class="modal-close"
+        (click)="closeModal()"
+        [disabled]="saving">
+        ×
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Mã MBTI</label>
+        <input
+          type="text"
+          maxlength="4"
+          [(ngModel)]="form.code"
+          placeholder="Ví dụ: INTJ"
+        />
+
+        <div class="quick-code-list" *ngIf="!isEditMode">
+          <button
+            type="button"
+            class="quick-code-chip"
+            *ngFor="let code of defaultMbtiCodes"
+            (click)="fillQuickCode(code)">
+            {{ code }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Tên nhóm</label>
+        <input
+          type="text"
+          [(ngModel)]="form.name"
+          placeholder="Ví dụ: Kiến trúc sư"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Mô tả</label>
+        <textarea
+          rows="6"
+          [(ngModel)]="form.description"
+          placeholder="Nhập mô tả ngắn cho nhóm MBTI này..."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button
+        type="button"
+        class="modal-btn cancel"
+        (click)="closeModal()"
+        [disabled]="saving">
+        Hủy
+      </button>
+
+      <button
+        type="button"
+        class="modal-btn save"
+        (click)="save()"
+        [disabled]="saving">
+        {{ saving ? 'Đang lưu...' : (isEditMode ? 'Cập nhật' : 'Lưu nhóm') }}
+      </button>
+    </div>
+  </div>
+</div>

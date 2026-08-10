@@ -1,0 +1,69 @@
+<div class="admin-auth-page">
+  <div class="admin-auth-popup">
+    <div class="admin-auth-side admin-auth-side--visual">
+      <div class="pastel-blob blob-1"></div>
+      <div class="pastel-blob blob-2"></div>
+      <div class="pastel-blob blob-3"></div>
+
+      <div class="visual-inner">
+        <div class="brand">NAVI</div>
+
+        <p class="visual-badge">Khu vực quản trị</p>
+
+        <h1>Đăng nhập để quản lý hệ thống NAVI</h1>
+
+        <p class="visual-desc">
+          Truy cập nhanh bảng điều khiển admin để quản lý người dùng, bài trắc nghiệm,
+          ngành nghề, khóa học và nội dung hệ thống.
+        </p>
+
+        <div class="mini-tags">
+          <span>Dashboard</span>
+          <span>Quản trị</span>
+          <span>Hệ thống</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-auth-side admin-auth-side--form">
+      <div class="form-wrap">
+        <div class="form-head">
+          <h2>Đăng nhập Admin</h2>
+          <p>Nhập tài khoản quản trị để tiếp tục</p>
+        </div>
+
+        <p class="error-text" *ngIf="err">{{ err }}</p>
+
+        <form (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              [(ngModel)]="email"
+              placeholder="admin@gmail.com"
+              autocomplete="email"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Mật khẩu</label>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              [(ngModel)]="password"
+              placeholder="Nhập mật khẩu admin"
+              autocomplete="current-password"
+            />
+          </div>
+
+          <button type="submit" class="submit-btn" [disabled]="loading">
+            {{ loading ? 'Đang đăng nhập...' : 'Đăng nhập' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

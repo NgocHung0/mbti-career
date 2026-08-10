@@ -1,0 +1,9 @@
+<ng-container *ngIf="!isAdminRoute()">
+  <app-site-header></app-site-header>
+</ng-container>
+
+<router-outlet></router-outlet>
+
+<ng-container *ngIf="!isAdminRoute()">
+  <app-site-footer></app-site-footer>
+</ng-container>

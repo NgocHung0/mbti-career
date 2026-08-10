@@ -1,0 +1,135 @@
+<!-- FLOATING CONTACT -->
+<div class="floating-contact">
+  <div class="contact-item contact-item-phone">
+    <a href="tel:0356744818" class="contact-phone">
+      <div class="phone-panel">
+        <span class="phone-number">0356744818</span>
+      </div>
+
+      <span class="phone-circle contact-orb orb-red">
+        <span class="orb-ripple"></span>
+        <span class="orb-ripple-2"></span>
+        <img src="/images/logo-phone.png" alt="Gọi điện" />
+      </span>
+    </a>
+  </div>
+
+  <div class="contact-item">
+    <a href="https://www.facebook.com/profile.php?id=61573282965886/" target="_blank" class="contact-pill">
+      <span class="contact-text text-blue">Nhắn tin Facebook</span>
+      <span class="contact-icon facebook contact-orb orb-blue">
+        <span class="orb-ripple"></span>
+        <span class="orb-ripple-2"></span>
+        <img src="/images/logo-fb.png" alt="Facebook" />
+      </span>
+    </a>
+  </div>
+
+  <div class="contact-item">
+    <a href="https://zalo.me/0356744818" target="_blank" class="contact-pill">
+      <span class="contact-text text-cyan">Nhắn tin Zalo</span>
+      <span class="contact-icon zalo contact-orb orb-cyan">
+        <span class="orb-ripple"></span>
+        <span class="orb-ripple-2"></span>
+        <img src="/images/logo-zalo.png" alt="Zalo" />
+      </span>
+    </a>
+  </div>
+
+  <div class="contact-item">
+    <a
+      href="https://www.google.com/maps/place/HUTECH"
+      target="_blank"
+      class="contact-pill"
+    >
+      <span class="contact-text text-green">Chỉ đường bản đồ</span>
+      <span class="contact-icon map contact-orb orb-green">
+        <span class="orb-ripple"></span>
+        <span class="orb-ripple-2"></span>
+        <img src="/images/logo-vitri.png" alt="Map" />
+      </span>
+    </a>
+  </div>
+</div>
+
+<section class="landing-page">
+  <section class="hero-clean">
+    <div class="hero-copy">
+      <div class="hero-chip">Định hướng nghề nghiệp</div>
+
+      <h1>Navi</h1>
+
+      <p>
+        NAVI giúp học sinh, sinh viên khám phá bản thân thông qua MBTI,
+        sở thích và năng lực cá nhân, từ đó gợi ý ngành học, trường đào tạo
+        và định hướng phát triển phù hợp.
+      </p>
+
+      <div class="hero-actions">
+        <a routerLink="/mbti-test" class="btn-main">Bắt đầu trắc nghiệm</a>
+        <a routerLink="/majors" class="btn-outline">Xem ngành nghề</a>
+      </div>
+    </div>
+
+    <div class="hero-robots">
+      <img class="mbti-bot bot-enfj" src="/images/emoji/ENFJ.png" alt="ENFJ" />
+      <img class="mbti-bot bot-intp" src="/images/emoji/INTP.png" alt="INTP" />
+      <img class="mbti-bot bot-estj main-bot" src="/images/emoji/ESTJ.png" alt="ESTJ" />
+      <img class="mbti-bot bot-infp" src="/images/emoji/INFP.png" alt="INFP" />
+      <img class="mbti-bot bot-entp" src="/images/emoji/ENTP.png" alt="ENTP" />
+      <img class="mbti-bot bot-isfj" src="/images/emoji/ISFJ.png" alt="ISFJ" />
+    </div>
+  </section>
+
+  <!-- MBTI 16 EMOJI -->
+  <section class="mbti-section">
+    <div class="mbti-title">
+      <h2>Khám phá nhóm MBTI của bạn</h2>
+      <p>
+        Nhấn vào từng emoji để xem nhóm tính cách đó là người như thế nào.
+      </p>
+    </div>
+
+    <div class="mbti-grid">
+      @for (item of mbtiTypes; track item.code) {
+        <div
+          class="mbti-card"
+          [class.flipped]="selectedMbti?.code === item.code"
+          (click)="toggleMbti(item)"
+        >
+          <div class="mbti-card-inner">
+            <div class="mbti-front">
+              <img [src]="item.emoji" [alt]="item.code" class="mbti-emoji" />
+
+              <span class="mbti-name">
+                {{ item.name }}
+              </span>
+            </div>
+
+            <div class="mbti-back">
+              <img [src]="item.emoji" [alt]="item.code" class="mbti-back-emoji" />
+
+              <h4>{{ item.code }}</h4>
+              <span class="mbti-role">{{ item.name }}</span>
+
+              <p>{{ item.detail }}</p>
+
+              <small>Nhấn để đóng</small>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="simple-cta">
+    <img class="cta2-robot" src="/images/emoji2/ENFP.png" alt="ENFP" />
+
+    <div>
+      <h2>Sẵn sàng khám phá bản thân?</h2>
+      <p>Bắt đầu bài test để có định hướng rõ ràng hơn cho tương lai.</p>
+    </div>
+
+    <a routerLink="/mbti-test" class="btn-main">Làm bài test</a>
+  </section>
+</section>

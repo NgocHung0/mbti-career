@@ -1,0 +1,366 @@
+<div class="lesson-page">
+  <div class="lesson-page__head">
+    <div class="head-left">
+      <div class="page-kicker">Quản lý nội dung khóa học</div>
+      <h1>{{ courseName() }}</h1>
+      <p>Quản lý danh sách bài học của khóa học này.</p>
+    </div>
+
+    <div class="head-actions">
+      <button type="button" class="btn btn--light" (click)="goBack()">
+        Quay lại khóa học
+      </button>
+
+      <button type="button" class="btn btn--primary" (click)="createNewLesson()">
+        Thêm bài học
+      </button>
+
+      <button type="button" class="btn btn--quiz" (click)="openQuizPanel()">
+        Thêm trắc nghiệm
+      </button>
+    </div>
+  </div>
+
+  <div class="alert-stack" *ngIf="successMessage() || errorMessage()">
+    <div class="alert alert--success" *ngIf="successMessage()">
+      {{ successMessage() }}
+    </div>
+    <div class="alert alert--error" *ngIf="errorMessage()">
+      {{ errorMessage() }}
+    </div>
+  </div>
+
+  <div class="lesson-layout">
+    <aside class="lesson-sidebar">
+      <div class="sidebar-head">
+        <h2>Danh sách bài học</h2>
+        <p>{{ filteredLessons().length }} bài học</p>
+      </div>
+
+      <div class="sidebar-search">
+        <input
+          #keywordInput
+          type="text"
+          placeholder="Tìm bài học..."
+          [value]="keyword()"
+          (input)="setKeyword(keywordInput.value)"
+        />
+      </div>
+
+      <div *ngIf="loading()" class="empty-box empty-box--small">
+        <h3>Đang tải...</h3>
+        <p>Vui lòng chờ một chút.</p>
+      </div>
+
+      <div class="lesson-list" *ngIf="!loading() && filteredLessons().length; else emptyLessons">
+        <button
+          type="button"
+          class="lesson-item"
+          *ngFor="let item of filteredLessons(); trackBy: trackLesson"
+          [class.is-active]="selectedLessonId() === item.id"
+          (click)="selectLesson(item.id)"
+        >
+          <div class="lesson-item__top">
+            <span class="order-badge">Bài {{ item.sort_order }}</span>
+            <span class="status-badge" [class.off]="!item.is_active">
+              {{ item.is_active ? 'Đang bật' : 'Bản nháp' }}
+            </span>
+          </div>
+
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.duration || 'Chưa có thời lượng' }}</p>
+
+          <div class="lesson-item__bottom">
+            <p class="quiz-meta">
+              {{ getQuizCount(item.id) > 0 ? ('Có ' + getQuizCount(item.id) + ' câu hỏi') : 'Chưa có bài tập' }}
+            </p>
+          </div>
+        </button>
+      </div>
+
+      <ng-template #emptyLessons>
+        <div class="empty-box" *ngIf="!loading()">
+          <h3>Chưa có bài học</h3>
+          <p>Nhấn “Thêm bài học” để bắt đầu tạo nội dung.</p>
+        </div>
+      </ng-template>
+    </aside>
+
+    <section class="lesson-main">
+      <div class="content-card">
+        <div class="card-head">
+          <div>
+            <h2>{{ selectedLessonId() ? 'Thông tin bài học' : 'Tạo bài học mới' }}</h2>
+            <p>Điền nội dung cơ bản của bài học trước.</p>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn--danger"
+            *ngIf="selectedLessonId()"
+            (click)="removeLesson()"
+            [disabled]="deleting()"
+          >
+            {{ deleting() ? 'Đang xóa...' : 'Xóa bài học' }}
+          </button>
+        </div>
+
+        <form class="lesson-form" [formGroup]="lessonForm" (ngSubmit)="saveLesson()">
+          <div class="form-grid">
+            <div class="form-field form-field--full">
+              <label for="title">Tên bài học</label>
+              <input id="title" type="text" formControlName="title" placeholder="Nhập tên bài học" />
+              <div class="field-error" *ngIf="lessonForm.controls.title.touched && lessonForm.controls.title.invalid">
+                Vui lòng nhập tên bài học.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="sort_order">Thứ tự bài</label>
+              <input id="sort_order" type="number" min="1" formControlName="sort_order" />
+            </div>
+
+            <div class="form-field">
+              <label for="duration">Thời lượng</label>
+              <input id="duration" type="text" formControlName="duration" placeholder="Ví dụ: 15 phút" />
+            </div>
+
+            <div class="form-field form-field--full">
+              <label for="video_url">Video URL</label>
+              <input id="video_url" type="text" formControlName="video_url" placeholder="https://..." />
+            </div>
+
+            <div class="form-field form-field--full">
+              <label for="description">Mô tả bài học</label>
+              <textarea
+                id="description"
+                rows="5"
+                formControlName="description"
+                placeholder="Nhập mô tả ngắn cho bài học"
+              ></textarea>
+            </div>
+
+            <div class="form-field form-field--full">
+              <label class="check-row">
+                <input type="checkbox" formControlName="is_active" />
+                <span>Hiển thị bài học</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button type="button" class="btn btn--light" (click)="createNewLesson()" [disabled]="saving()">
+              Làm mới
+            </button>
+
+            <button type="submit" class="btn btn--primary" [disabled]="saving()">
+              {{ saving() ? 'Đang lưu...' : (selectedLessonId() ? 'Lưu bài học' : 'Tạo bài học') }}
+            </button>
+          </div>
+
+          <div
+            class="lesson-preview-toggle-wrap"
+            *ngIf="selectedLessonId() && getQuizCount(selectedLessonId()!) > 0"
+          >
+            <button
+              type="button"
+              class="lesson-preview-toggle lesson-preview-toggle--pulse"
+              (click)="toggleLessonQuizPreview(selectedLessonId()!)"
+              [attr.aria-label]="expandedLessonId() === selectedLessonId() ? 'Ẩn toàn bộ câu trắc nghiệm' : 'Hiện toàn bộ câu trắc nghiệm'"
+            >
+              <span
+                class="lesson-preview-toggle__icon"
+                [class.is-open]="expandedLessonId() === selectedLessonId()"
+              >
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M5 7.5L10 12.5L15 7.5"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+
+          <div
+            class="lesson-quiz-preview"
+            *ngIf="selectedLessonId() && expandedLessonId() === selectedLessonId() && selectedLessonQuizzes().length"
+          >
+            <div class="lesson-quiz-preview__head">
+              <span>Toàn bộ câu trắc nghiệm</span>
+              <span class="lesson-quiz-preview__count">{{ selectedLessonQuizzes().length }} câu</span>
+            </div>
+
+            <div
+              class="lesson-quiz-preview__item"
+              *ngFor="let quiz of selectedLessonQuizzes(); let i = index; trackBy: trackQuiz"
+            >
+              <div class="lesson-quiz-preview__item-top">
+                <span class="lesson-quiz-preview__index">Câu {{ i + 1 }}</span>
+                <span class="lesson-quiz-preview__answer">
+                  Đáp án đúng: {{ quiz.correct_answer }}
+                </span>
+              </div>
+
+              <p class="lesson-quiz-preview__question">{{ quiz.question }}</p>
+
+              <div class="lesson-quiz-preview__options">
+                <div class="preview-option" [class.is-correct]="quiz.correct_answer === 'A'">
+                  <strong>A.</strong> {{ quiz.option_a }}
+                </div>
+                <div class="preview-option" [class.is-correct]="quiz.correct_answer === 'B'">
+                  <strong>B.</strong> {{ quiz.option_b }}
+                </div>
+                <div class="preview-option" *ngIf="quiz.option_c" [class.is-correct]="quiz.correct_answer === 'C'">
+                  <strong>C.</strong> {{ quiz.option_c }}
+                </div>
+                <div class="preview-option" *ngIf="quiz.option_d" [class.is-correct]="quiz.correct_answer === 'D'">
+                  <strong>D.</strong> {{ quiz.option_d }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="content-card" id="quiz-panel" *ngIf="showQuizPanel()">
+        <div class="card-head">
+          <div>
+            <h2>{{ editingQuizId() ? 'Chỉnh sửa trắc nghiệm' : 'Thêm trắc nghiệm' }}</h2>
+            <p>
+              {{ selectedLesson() ? ('Bài học đang chọn: ' + selectedLesson()!.title) : 'Vui lòng chọn bài học.' }}
+            </p>
+          </div>
+
+          <button type="button" class="btn btn--light" (click)="closeQuizPanel()">
+            Đóng
+          </button>
+        </div>
+
+        <form class="quiz-form" [formGroup]="quizForm" (ngSubmit)="saveQuiz()">
+          <div class="form-grid">
+            <div class="form-field form-field--full">
+              <label for="question">Câu hỏi</label>
+              <textarea
+                id="question"
+                rows="3"
+                formControlName="question"
+                placeholder="Nhập câu hỏi trắc nghiệm"
+              ></textarea>
+              <div class="field-error" *ngIf="quizForm.controls.question.touched && quizForm.controls.question.invalid">
+                Vui lòng nhập câu hỏi.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="option_a">Đáp án A</label>
+              <input id="option_a" type="text" formControlName="option_a" />
+              <div class="field-error" *ngIf="quizForm.controls.option_a.touched && quizForm.controls.option_a.invalid">
+                Vui lòng nhập đáp án A.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="option_b">Đáp án B</label>
+              <input id="option_b" type="text" formControlName="option_b" />
+              <div class="field-error" *ngIf="quizForm.controls.option_b.touched && quizForm.controls.option_b.invalid">
+                Vui lòng nhập đáp án B.
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="option_c">Đáp án C</label>
+              <input id="option_c" type="text" formControlName="option_c" />
+            </div>
+
+            <div class="form-field">
+              <label for="option_d">Đáp án D</label>
+              <input id="option_d" type="text" formControlName="option_d" />
+            </div>
+
+            <div class="form-field">
+              <label for="correct_answer">Đáp án đúng</label>
+              <select id="correct_answer" formControlName="correct_answer">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="quiz_sort_order">Thứ tự câu hỏi</label>
+              <input id="quiz_sort_order" type="number" min="1" formControlName="sort_order" />
+            </div>
+          </div>
+
+          <div class="card-actions card-actions--quiz">
+            <button type="submit" class="btn btn--quiz" [disabled]="savingQuiz()">
+              {{ savingQuiz() ? 'Đang lưu...' : (editingQuizId() ? 'Lưu câu hỏi' : 'Thêm câu hỏi') }}
+            </button>
+          </div>
+
+          <div
+            class="quiz-divider"
+            *ngIf="!loadingQuizzes() && selectedLessonQuizzes().length">
+          </div>
+        </form>
+
+        <div *ngIf="loadingQuizzes()" class="empty-box empty-box--small">
+          <h3>Đang tải trắc nghiệm...</h3>
+          <p>Vui lòng chờ một chút.</p>
+        </div>
+
+        <div class="quiz-list" *ngIf="!loadingQuizzes() && selectedLessonQuizzes().length; else emptyQuiz">
+          <div class="quiz-item" *ngFor="let quiz of selectedLessonQuizzes(); trackBy: trackQuiz">
+            <div class="quiz-item__head">
+              <div>
+                <div class="quiz-order">Câu {{ quiz.sort_order }}</div>
+                <h3>{{ quiz.question }}</h3>
+              </div>
+
+              <div class="quiz-actions">
+                <button type="button" class="btn btn--light btn--sm" (click)="editQuiz(quiz)">
+                  Sửa
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--danger btn--sm"
+                  (click)="removeQuiz(quiz.id)"
+                  [disabled]="deletingQuizId() === quiz.id"
+                >
+                  {{ deletingQuizId() === quiz.id ? 'Đang xóa...' : 'Xóa' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="quiz-options">
+              <div class="quiz-option" [class.is-correct]="quiz.correct_answer === 'A'">
+                A. {{ quiz.option_a }}
+              </div>
+              <div class="quiz-option" [class.is-correct]="quiz.correct_answer === 'B'">
+                B. {{ quiz.option_b }}
+              </div>
+              <div class="quiz-option" *ngIf="quiz.option_c" [class.is-correct]="quiz.correct_answer === 'C'">
+                C. {{ quiz.option_c }}
+              </div>
+              <div class="quiz-option" *ngIf="quiz.option_d" [class.is-correct]="quiz.correct_answer === 'D'">
+                D. {{ quiz.option_d }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #emptyQuiz>
+          <div class="empty-box empty-box--small" *ngIf="!loadingQuizzes()">
+            <h3>Chưa có trắc nghiệm</h3>
+            <p>Bài học này hiện chưa có câu hỏi nào.</p>
+          </div>
+        </ng-template>
+      </div>
+    </section>
+  </div>
+</div>

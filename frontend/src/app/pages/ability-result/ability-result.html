@@ -1,0 +1,413 @@
+<div
+  class="ability-result-page"
+  *ngIf="mbti && interest && ability"
+>
+  <div class="container">
+    <div class="premium-meta-strip">
+      <span
+        class="premium-meta-chip premium-meta-mbti"
+      >
+        MBTI: {{ mbtiType }}
+      </span>
+
+      <span
+        class="premium-meta-chip premium-meta-package"
+      >
+        Gói: Premium
+      </span>
+
+      <span class="premium-meta-chip">
+        Cập nhật: {{ resultUpdatedDate }}
+      </span>
+    </div>
+
+    <section class="premium-overview-grid">
+      <article
+        class="premium-overview-card profile-overview-card"
+      >
+        <h2 class="premium-panel-title">
+          TỔNG QUAN HỒ SƠ CỦA BẠN
+        </h2>
+
+        <div class="profile-legend">
+          <span
+            class="profile-legend-item profile-legend-interest"
+          >
+            <span
+              class="profile-legend-dot"
+            ></span>
+
+            Sở thích (4 tiêu chí)
+          </span>
+
+          <span
+            class="profile-legend-item profile-legend-ability"
+          >
+            <span
+              class="profile-legend-dot"
+            ></span>
+
+            Năng lực (10 tiêu chí)
+          </span>
+        </div>
+
+        <div class="profile-wheel-wrap">
+          <svg
+            class="profile-wheel"
+            [attr.viewBox]="
+              '0 0 ' +
+              overviewSvgSize +
+              ' ' +
+              overviewSvgSize
+            "
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Biểu đồ tổng quan sở thích và năng lực"
+          >
+            <!-- Vòng ngoài: 10 năng lực -->
+            <g class="ability-wheel-layer">
+              <g
+                *ngFor="
+                  let segment
+                  of abilityCircleSegments
+                "
+              >
+                <path
+                  [attr.d]="segment.areaPath"
+                  class="wheel-sector wheel-sector-ability"
+                ></path>
+
+                <path
+                  *ngIf="segment.progressPath"
+                  [attr.d]="segment.progressPath"
+                  class="wheel-progress wheel-progress-ability"
+                ></path>
+
+                <text
+                  [attr.x]="segment.labelX"
+                  [attr.y]="segment.labelY"
+                  class="wheel-label wheel-label-ability"
+                  text-anchor="middle"
+                >
+                  <tspan
+                    *ngFor="
+                      let line
+                      of segment.labelLines;
+                      let lineIndex = index
+                    "
+                    [attr.x]="segment.labelX"
+                    [attr.dy]="
+                      lineIndex === 0
+                        ? 0
+                        : 17
+                    "
+                  >
+                    {{ line }}
+                  </tspan>
+
+                  <tspan
+                    [attr.x]="segment.labelX"
+                    dy="23"
+                    class="wheel-percent wheel-percent-ability"
+                  >
+                    {{
+                      formatPercent(
+                        segment.percent
+                      )
+                    }}%
+                  </tspan>
+                </text>
+              </g>
+            </g>
+
+            <!-- Vòng trong: 4 sở thích -->
+            <g class="interest-wheel-layer">
+              <g
+                *ngFor="
+                  let segment
+                  of interestCircleSegments
+                "
+              >
+                <path
+                  [attr.d]="segment.areaPath"
+                  class="wheel-sector wheel-sector-interest"
+                ></path>
+
+                <path
+                  *ngIf="segment.progressPath"
+                  [attr.d]="segment.progressPath"
+                  class="wheel-progress wheel-progress-interest"
+                ></path>
+
+                <text
+                  [attr.x]="segment.labelX"
+                  [attr.y]="segment.labelY"
+                  class="wheel-label wheel-label-interest"
+                  text-anchor="middle"
+                >
+                  <tspan
+                    *ngFor="
+                      let line
+                      of segment.labelLines;
+                      let lineIndex = index
+                    "
+                    [attr.x]="segment.labelX"
+                    [attr.dy]="
+                      lineIndex === 0
+                        ? 0
+                        : 18
+                    "
+                  >
+                    {{ line }}
+                  </tspan>
+
+                  <tspan
+                    [attr.x]="segment.labelX"
+                    dy="24"
+                    class="wheel-percent wheel-percent-interest"
+                  >
+                    {{
+                      formatPercent(
+                        segment.percent
+                      )
+                    }}%
+                  </tspan>
+                </text>
+              </g>
+            </g>
+
+            <!-- Tâm biểu đồ -->
+            <circle
+              [attr.cx]="overviewCenter"
+              [attr.cy]="overviewCenter"
+              r="82"
+              class="wheel-center"
+            ></circle>
+
+            <text
+              [attr.x]="overviewCenter"
+              [attr.y]="overviewCenter - 2"
+              class="wheel-center-type"
+              text-anchor="middle"
+            >
+              {{ mbtiType }}
+            </text>
+
+            <text
+              [attr.x]="overviewCenter"
+              [attr.y]="overviewCenter + 28"
+              class="wheel-center-caption"
+              text-anchor="middle"
+            >
+              Hồ sơ tổng hợp
+            </text>
+          </svg>
+        </div>
+
+        <div class="profile-wheel-note">
+          <span
+            class="profile-wheel-note-icon"
+          >
+            i
+          </span>
+
+          <span>
+            Tỷ lệ càng cao thể hiện mức độ
+            bạn có sở thích hoặc năng lực
+            mạnh hơn ở tiêu chí đó.
+          </span>
+        </div>
+      </article>
+
+      <article
+        class="premium-overview-card premium-summary-card"
+      >
+        <div class="premium-result-hero">
+          <div class="premium-result-copy">
+            <p class="premium-result-kicker">
+              KẾT QUẢ GÓI PREMIUM
+            </p>
+
+            <h1>
+              {{ mbtiTitle }}
+              ({{ mbtiType }})
+            </h1>
+
+            <p>
+              Kết quả này được tổng hợp từ
+              MBTI, sở thích và năng lực để
+              đưa ra định hướng sâu hơn.
+            </p>
+          </div>
+
+          <div class="premium-result-robot">
+            <img
+              [src]="getMbtiRobotImage()"
+              [alt]="mbtiType"
+            >
+          </div>
+        </div>
+
+        <div
+          class="premium-summary-divider"
+        ></div>
+
+        <div class="top-ability-panel">
+          <h2 class="premium-panel-title">
+            TOP NĂNG LỰC NỔI TRỘI
+          </h2>
+
+          <p class="top-ability-subtitle">
+            3 năng lực có tỷ lệ nổi bật
+            cao nhất
+          </p>
+
+          <div class="top-ability-list">
+            <div
+              class="top-ability-row"
+              *ngFor="
+                let item of topAbilities;
+                let i = index
+              "
+              [class.top-ability-first]="
+                i === 0
+              "
+              [class.top-ability-second]="
+                i === 1
+              "
+              [class.top-ability-third]="
+                i === 2
+              "
+            >
+              <span
+                class="top-ability-rank"
+              >
+                #{{ i + 1 }}
+              </span>
+
+              <strong
+                class="top-ability-name"
+              >
+                {{ item.label }}
+              </strong>
+
+              <strong
+                class="top-ability-value"
+              >
+                {{
+                  formatPercent(
+                    item.percent
+                  )
+                }}%
+              </strong>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="block">
+      <h2>Gợi ý ngành theo MBTI + sở thích + năng lực</h2>
+      <div class="career-analysis-box">
+        <h3>AI phân tích đề xuất</h3>
+
+        <div
+          class="career-ai-content"
+          *ngIf="aiCareerAnalysis; else loadingAiAnalysis"
+          [innerHTML]="aiCareerAnalysis">
+        </div>
+
+        <ng-template #loadingAiAnalysis>
+          <p>
+            AI đang phân tích mức độ phù hợp giữa MBTI, sở thích, năng lực, ngành nghề và trường học được đề xuất...
+          </p>
+        </ng-template>
+      </div>
+
+      <div class="career-grid" *ngIf="topCareers && topCareers.length > 0; else noPremiumCareers">
+        <div class="career-card" *ngFor="let career of topCareers; let i = index">
+
+          <div class="career-top">
+            <div class="career-rank">#{{ i + 1 }}</div>
+
+            <div class="career-head">
+              <h3>{{ career.name }}</h3>
+              <span class="career-score">{{ career.score }}%</span>
+            </div>
+          </div>
+
+          <p class="career-desc">{{ career.description }}</p>
+
+          <div class="career-schools">
+            <div class="school-title">Trường gợi ý</div>
+
+            <div class="school-tags school-logo-list" *ngIf="career.schools && career.schools.length > 0; else noSchools">
+              <span
+                class="school-logo-tag"
+                *ngFor="let school of career.schools"
+                [class.school-featured]="school.featured"
+              >
+                <span class="school-logo-frame">
+                  <img
+                    *ngIf="school.image_url; else schoolInitial"
+                    [src]="school.image_url"
+                    [alt]="school.name"
+                  />
+
+                  <ng-template #schoolInitial>
+                    <span class="school-initial">{{ school.name.slice(0, 1) }}</span>
+                  </ng-template>
+                </span>
+
+                <div class="school-hover-card">
+                  <div class="hover-logo-box">
+                    <img
+                      *ngIf="school.image_url; else hoverInitial"
+                      [src]="school.image_url"
+                      [alt]="school.name"
+                    />
+
+                    <ng-template #hoverInitial>
+                      <span class="school-initial">{{ school.name.slice(0, 1) }}</span>
+                    </ng-template>
+                  </div>
+
+                  <div class="hover-content">
+                    <h4>{{ school.name }}</h4>
+
+                    <p>
+                      {{ school.short_description }}
+                      <button
+                        type="button"
+                        class="view-detail-link"
+                        (click)="goToAdmissionDetail($event, school, career)"
+                      >
+                        ...Xem chi tiết
+                      </button>
+                    </p>
+                  </div>
+                </div>
+              </span>
+            </div>
+
+            <ng-template #noSchools>
+              <div class="school-empty">Chưa có trường gợi ý.</div>
+            </ng-template>
+          </div>
+
+        </div>
+      </div>
+
+      <ng-template #noPremiumCareers>
+        <p class="empty-career">
+          Đang tải hoặc chưa có dữ liệu gợi ý ngành.
+        </p>
+      </ng-template>
+    </section>
+
+    <div class="bottom-actions">
+      <a class="btn-light" (click)="restartFullTest()">Làm lại bài test</a>
+      <a routerLink="/" class="btn-primary">Về trang chủ</a>
+    </div>
+  </div>
+</div>

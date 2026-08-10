@@ -1,0 +1,51 @@
+.settings-page{
+  padding:20px;
+}
+
+.page-head h1{
+  font-size:28px;
+  font-weight:800;
+  margin-bottom:6px;
+}
+
+.page-head p{
+  color:#6b7c8d;
+}
+
+.settings-grid{
+  margin-top:20px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:16px;
+}
+
+.settings-card{
+  display:block;
+  padding:20px;
+  border-radius:18px;
+  background:white;
+  border:1px solid #e5edf4;
+  text-decoration:none;
+  color:inherit;
+  transition:.2s;
+}
+
+.settings-card:hover{
+  transform:translateY(-2px);
+  border-color:#4d7698;
+}
+
+.settings-card h2{
+  font-size:18px;
+  margin-bottom:6px;
+}
+
+.settings-card p{
+  font-size:14px;
+  color:#6b7c8d;
+}
+
+.settings-card.disabled{
+  opacity:.6;
+  pointer-events:none;
+}

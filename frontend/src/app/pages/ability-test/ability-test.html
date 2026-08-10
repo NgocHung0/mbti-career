@@ -1,0 +1,133 @@
+<div class="test-page">
+  <section class="test-hero">
+    <div class="container hero-wrap">
+      <div class="hero-logo">
+        <div class="hero-logo-circle">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <h1>Test năng lực nổi trội</h1>
+      <p class="hero-subtitle">NAVI Ability Explorer</p>
+
+      <div class="hero-steps">
+        <div class="hero-step step-1">
+          <div class="step-badge">BƯỚC 1</div>
+          <h3>Đánh giá thế mạnh</h3>
+          <p>Xác định bạn mạnh hơn ở giao tiếp, logic, sáng tạo, lãnh đạo hay khả năng thích ứng.</p>
+        </div>
+
+        <div class="hero-step step-2">
+          <div class="step-badge">BƯỚC 2</div>
+          <h3>Đối chiếu với sở thích</h3>
+          <p>Kết hợp năng lực thực tế với sở thích và tính cách để tăng độ chính xác.</p>
+        </div>
+
+        <div class="hero-step step-3">
+          <div class="step-badge">BƯỚC 3</div>
+          <h3>Nhận định hướng sâu hơn</h3>
+          <p>Từ kết quả này, hệ thống sẽ gợi ý hướng ngành phù hợp toàn diện hơn.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="question-section" id="questionSection">
+    <div class="container">
+      <div
+        class="progress-card"
+        [class.plus]="activePlanClass === 'plus'"
+        [class.premium]="activePlanClass === 'premium'"
+      >
+        <div class="progress-top">
+          <div class="active-plan">
+            <span class="active-plan-chip">{{ activePlanChip }}</span>
+            <strong>{{ activePlanLabel }}</strong>
+          </div>
+
+          <div class="page-indicator">
+            Trang {{ currentPage }} / {{ totalPages }}
+          </div>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercent"></div>
+
+          <div
+            class="progress-cap"
+            *ngIf="progressPercent > 0"
+            [style.left.%]="progressPercent"
+          >
+            ⭐
+          </div>
+        </div>
+      </div>
+
+      <div class="question-card">
+        <div class="question-item" *ngFor="let q of pagedQuestions">
+          <div class="question-meta">
+            <span class="question-id">Câu {{ q.id }}</span>
+            <span class="question-axis">{{ q.axis }}</span>
+          </div>
+
+          <h3>{{ q.question }}</h3>
+
+          <div class="answer-grid">
+            <button
+              type="button"
+              class="answer-btn"
+              [class.selected]="isSelected(q.id, 'A')"
+              (click)="selectAnswer(q.id, 'A')"
+            >
+              <span class="answer-label">A</span>
+              <span class="answer-text">{{ q.optionA }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="answer-btn"
+              [class.selected]="isSelected(q.id, 'B')"
+              (click)="selectAnswer(q.id, 'B')"
+            >
+              <span class="answer-label">B</span>
+              <span class="answer-text">{{ q.optionB }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pager">
+        <button
+          type="button"
+          class="pager-btn pager-secondary"
+          (click)="prevPage()"
+          [disabled]="currentPage === 1"
+        >
+          Quay lại
+        </button>
+
+        <div class="pager-right">
+          <p class="page-error" *ngIf="pageError">{{ pageError }}</p>
+
+          <button
+            *ngIf="currentPage < totalPages"
+            type="button"
+            class="pager-btn pager-primary"
+            (click)="nextPage()"
+          >
+            Tiếp theo
+          </button>
+
+          <button
+            *ngIf="currentPage === totalPages"
+            type="button"
+            class="pager-btn pager-submit"
+            (click)="submit()"
+          >
+            Nộp bài
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

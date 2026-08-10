@@ -1,0 +1,27 @@
+<div class="container" *ngIf="result">
+  <h2>Kết quả MBTI: {{ result.mbti_type }}</h2>
+
+  <div class="vector">
+    <div *ngFor="let axis of ['E','S','T','J']">
+      {{ axis }}: {{ result.vector[axis] }}%
+    </div>
+  </div>
+
+  <h3>Top ngành phù hợp</h3>
+
+  <div class="card" *ngFor="let m of result.top_majors">
+    <h4>{{ m.name }} ({{ m.code }})</h4>
+    <p>{{ m.description }}</p>
+
+    <div class="score">
+      MBTI: {{ m.fit_mbti }}% |
+      Sở thích: {{ m.fit_interest }}% |
+      Final: <strong>{{ m.final }}</strong>
+    </div>
+
+    <div class="explain">
+      {{ m.explain.mbti }} <br>
+      {{ m.explain.interest }}
+    </div>
+  </div>
+</div>

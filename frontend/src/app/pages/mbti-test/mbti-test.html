@@ -1,0 +1,374 @@
+<div class="test-page">
+  <section class="test-hero">
+    <div class="container hero-wrap">
+      <div class="hero-logo" aria-hidden="true">
+        <div class="hero-loader">
+          <span class="loader-core"></span>
+          <span class="loader-dot dot-blue"></span>
+          <span class="loader-dot dot-purple"></span>
+          <span class="loader-dot dot-yellow"></span>
+          <span class="loader-dot dot-green"></span>
+        </div>
+      </div>
+
+      <div class="hero-heading">
+        <h1>Bài kiểm tra tính cách miễn phí</h1>
+        <p class="hero-subtitle">NAVI Type Explorer</p>
+      </div>
+
+      <button class="scroll-fab" type="button" (click)="scrollToQuestionSection()">
+        <span class="scroll-fab-ring"></span>
+        <span class="scroll-fab-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 5v11"></path>
+            <path d="M7 13l5 5 5-5"></path>
+          </svg>
+        </span>
+        <span class="scroll-fab-label">Làm bài test</span>
+      </button>
+
+      <div class="hero-steps">
+        <article class="hero-step step-1">
+          <div class="step-top">
+            <div class="step-badge">BƯỚC 1</div>
+            <div class="step-line"></div>
+          </div>
+          <h3>Hoàn tất bài kiểm tra</h3>
+          <p>
+            Hãy trả lời trung thực theo cảm nhận tự nhiên của bạn để hệ thống nhận diện kiểu tính cách sát nhất.
+          </p>
+        </article>
+
+        <article class="hero-step step-2">
+          <div class="step-top">
+            <div class="step-badge">BƯỚC 2</div>
+            <div class="step-line"></div>
+          </div>
+          <h3>Xem kết quả chi tiết</h3>
+          <p>
+            Nhận phân tích rõ ràng về điểm mạnh, xu hướng hành vi, cách ra quyết định và cách bạn tương tác với thế giới.
+          </p>
+        </article>
+
+        <article class="hero-step step-3">
+          <div class="step-top">
+            <div class="step-badge">BƯỚC 3</div>
+            <div class="step-line"></div>
+          </div>
+          <h3>Mở khóa tiềm năng</h3>
+          <p>
+            Dùng kết quả như một nền tảng tham khảo để định hướng nghề nghiệp, học tập và phát triển bản thân tốt hơn.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="question-section" id="questionSection">
+    <div class="container">
+      <div
+        class="progress-card"
+        [class.free]="testMode === 'free'"
+        [class.plus]="testMode === 'basic_package'"
+        [class.premium]="testMode === 'full_package'"
+      >
+        <div class="progress-top">
+          <div class="active-plan">
+            <span class="active-plan-chip">{{ activePlanChip }}</span>
+            <strong>{{ activePlanLabel }}</strong>
+          </div>
+
+          <div class="page-indicator">
+            Trang {{ currentPage }} / {{ totalPages }}
+          </div>
+        </div>
+
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercent"></div>
+
+          <div class="progress-cap" *ngIf="progressPercent > 0" [style.left.%]="progressPercent">
+            ⭐
+          </div>
+        </div>
+      </div>
+
+      <div class="package-loading" *ngIf="loadingQuestions && !pagedQuestions.length">
+        Đang tải bộ câu hỏi MBTI từ Admin...
+      </div>
+
+      <div class="package-error" *ngIf="!loadingQuestions && questionsError">
+        {{ questionsError }}
+      </div>
+
+      <div class="package-loading" *ngIf="!loadingQuestions && !questionsError && !pagedQuestions.length">
+        Chưa có dữ liệu câu hỏi để hiển thị.
+      </div>
+
+      <ng-container *ngIf="!questionsError && pagedQuestions.length">
+        <div class="question-card">
+          <div class="question-item" *ngFor="let q of pagedQuestions" [id]="'question-' + q.id">
+            <div class="question-meta">
+              <span class="question-chip">
+                {{ getQuestionDisplayLabel(q) }}
+              </span>
+
+              <span class="question-axis">
+                {{ q.axisLabel || q.axis }}
+              </span>
+            </div>
+
+            <h3>
+              {{ q.question }}
+              <span class="required-star">*</span>
+            </h3>
+
+            <div class="answer-grid">
+              <button
+                type="button"
+                class="answer-btn"
+                [class.selected]="isSelected(q.id, 'A')"
+                (click)="selectAnswer(q.id, 'A')"
+              >
+                <span class="answer-label">A</span>
+                <span class="answer-text">{{ q.optionA }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="answer-btn"
+                [class.selected]="isSelected(q.id, 'B')"
+                (click)="selectAnswer(q.id, 'B')"
+              >
+                <span class="answer-label">B</span>
+                <span class="answer-text">{{ q.optionB }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pager">
+          <button
+            type="button"
+            class="pager-btn pager-secondary"
+            (click)="prevPage()"
+            [disabled]="currentPage === 1"
+          >
+            Quay lại
+          </button>
+
+          <div class="pager-right">
+            <p class="page-error" *ngIf="pageError">{{ pageError }}</p>
+
+            <button
+              *ngIf="currentPage < totalPages"
+              type="button"
+              class="pager-btn pager-primary"
+              (click)="nextPage()"
+            >
+              Tiếp theo
+            </button>
+
+            <button
+              *ngIf="currentPage === totalPages"
+              type="button"
+              class="pager-btn pager-submit"
+              (click)="submitTest()"
+            >
+              Nộp bài
+            </button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </section>
+
+  <div class="modal-overlay" *ngIf="showUpgradeModal">
+    <div class="upgrade-modal">
+      <button type="button" class="modal-close-btn" (click)="closeUpgradeModal()" aria-label="Đóng popup">×</button>
+
+      <div class="upgrade-modal-head">
+        <span class="upgrade-kicker">GÓI NÂNG CAO</span>
+        <h2>Chọn gói test nâng cao</h2>
+        <p class="modal-desc">
+          Chọn 1 trong các gói test từ Admin để hệ thống phân tích sâu hơn trước khi xem kết quả.
+        </p>
+      </div>
+
+      <div class="package-loading" *ngIf="loadingPackages">
+        Đang tải gói dịch vụ.
+      </div>
+
+      <div class="package-error" *ngIf="!loadingPackages && packageError">
+        {{ packageError }}
+      </div>
+
+      <div class="upgrade-list vertical" *ngIf="!loadingPackages && !packageError">
+        <button
+          *ngFor="let pkg of upgradePackages; trackBy: trackPackage"
+          type="button"
+          class="upgrade-option"
+          [ngClass]="getThemeClass(pkg)"
+          [class.active]="selectedPackageId === pkg.id"
+          (click)="selectPlan(pkg)"
+        >
+          <div class="upgrade-radio">
+            <span class="radio-dot"></span>
+          </div>
+
+          <div class="upgrade-body">
+            <div class="upgrade-top">
+              <div class="upgrade-title-wrap">
+                <div class="upgrade-title">{{ pkg.name }}</div>
+                <div class="upgrade-subtitle">{{ pkg.subtitle }}</div>
+              </div>
+
+              <div class="upgrade-price">
+                <span class="price-tag">{{ pkg.priceLabel }}</span>
+              </div>
+            </div>
+
+            <div class="upgrade-text">
+              {{ pkg.description }}
+            </div>
+
+            <div class="upgrade-bottom">
+              <span class="upgrade-chip" [ngClass]="'chip-' + pkg.themeClass">
+                {{ pkg.chipText }}
+              </span>
+
+              <span class="upgrade-check">
+                {{ selectedPackageId === pkg.id ? 'Đã chọn gói này' : pkg.selectedText }}
+              </span>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-skip" (click)="skipToAd()">
+          Bỏ qua, xem quảng cáo để ra kết quả
+        </button>
+
+        <button
+          type="button"
+          class="modal-btn modal-continue"
+          (click)="continueWithUpgrades()"
+          [disabled]="!selectedPackageId || loadingPackages || paymentCreating"
+        >
+          {{ paymentCreating ? 'Đang tạo thanh toán...' : 'Tiếp tục' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showPaymentModal">
+    <div class="upgrade-modal payment-modal">
+      <button type="button" class="modal-close-btn" (click)="closePaymentModal()" aria-label="Đóng popup">×</button>
+
+      <div class="upgrade-modal-head">
+        <span class="upgrade-kicker">THANH TOÁN GÓI</span>
+        <h2>{{ paymentTitle }}</h2>
+        <p class="modal-desc">
+          Vui lòng quét mã QR để thanh toán. Sau khi hoàn tất, bạn sẽ được chuyển sang bài test nâng cao tương ứng.
+        </p>
+      </div>
+
+      <div class="package-error" *ngIf="packageError">
+        {{ packageError }}
+      </div>
+
+      <div class="payment-box">
+        <div class="payment-price">{{ paymentPrice }}</div>
+
+        <div class="payment-qr-wrap" *ngIf="paymentQrSrc || paymentCheckoutUrl">
+          <img
+            *ngIf="paymentQrSrc"
+            [src]="paymentQrSrc"
+            alt="QR thanh toán"
+            class="payment-qr"
+          />
+        </div>
+
+        <a
+          *ngIf="paymentCheckoutUrl"
+          [href]="paymentCheckoutUrl"
+          target="_blank"
+          rel="noopener"
+          class="payment-open-link"
+        >
+          Mở trang thanh toán PayOS
+        </a>
+
+        <p class="payment-note">
+          Trạng thái: {{ paymentStatus || 'Đang chờ thanh toán' }}
+        </p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-skip" (click)="cancelPayment()">
+          Quay lại
+        </button>
+
+        <button
+          type="button"
+          class="modal-btn modal-continue"
+          (click)="confirmPayment()"
+          [disabled]="paymentChecking || !paymentOrderCode"
+        >
+          {{ paymentChecking ? 'Đang kiểm tra...' : 'Tôi đã thanh toán' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showAdModal">
+    <div class="ad-modal">
+      <h2>Quảng cáo tài trợ</h2>
+      <p class="ad-desc">
+        Hãy bấm bắt đầu để xem quảng cáo. Hệ thống sẽ tự chuyển sang kết quả khi video kết thúc.
+      </p>
+
+      <div class="ad-video-wrap">
+        <video
+          #adVideo
+          class="ad-video"
+          [src]="adVideoSrc"
+          playsinline
+          preload="metadata"
+          controls
+          (loadedmetadata)="onAdLoadedMetadata(adVideo)"
+          (timeupdate)="onAdTimeUpdate(adVideo)"
+          (ended)="onAdEnded()"
+          (error)="onAdError()"
+        >
+        </video>
+
+        <button
+          *ngIf="!adStarted || adErrorMessage"
+          type="button"
+          class="modal-btn modal-continue ad-start-btn"
+          (click)="playAd()"
+        >
+          {{ adErrorMessage ? 'Phát lại quảng cáo' : 'Bắt đầu xem quảng cáo' }}
+        </button>
+      </div>
+
+      <p class="ad-countdown" *ngIf="adReady && adStarted && !adErrorMessage">
+        Còn lại: {{ adCountdown }} giây
+      </p>
+
+      <p class="ad-countdown" *ngIf="adErrorMessage">
+        {{ adErrorMessage }}
+        <span *ngIf="adCountdown > 0"> Tự chuyển sau {{ adCountdown }} giây...</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="app-toast" *ngIf="showToast">
+    <div class="app-toast-content">
+      <span class="app-toast-icon">✓</span>
+      <span class="app-toast-text">{{ toastMessage }}</span>
+      <button type="button" class="app-toast-close" (click)="closeToast()">×</button>
+    </div>
+  </div>
+</div>

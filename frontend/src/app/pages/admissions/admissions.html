@@ -1,0 +1,266 @@
+<div class="admissions-page">
+  <section class="admissions-list-section">
+    <div class="container">
+
+      <div class="section-head">
+        <h2>Thông tin tuyển sinh nổi bật</h2>
+        <p>Nhấn vào từng thẻ để xem đầy đủ chi tiết tuyển sinh.</p>
+      </div>
+
+      <!-- SEARCH + FILTER -->
+      <section class="filter-section">
+        <div class="filter-row">
+          <div class="search-box search-box--compact">
+            <input
+              type="text"
+              [ngModel]="keyword()"
+              (ngModelChange)="onKeywordChange($event)"
+              placeholder="Tìm trường, ngành, địa điểm, học phí..."
+            />
+          </div>
+
+          <div class="status-list status-list--inline">
+            <button
+              type="button"
+              *ngFor="let status of statuses"
+              (click)="setStatus(status)"
+              [class.active]="activeStatus() === status"
+            >
+              {{ status }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATE -->
+      <div class="state-box" *ngIf="loading()">Đang tải dữ liệu...</div>
+      <div class="state-box error" *ngIf="!loading() && error()">{{ error() }}</div>
+
+      <!-- LIST -->
+      <div
+        class="cards-list"
+        *ngIf="!loading() && !error() && filteredAdmissions().length; else emptyAdmissions"
+      >
+        <article
+          class="admission-row-card"
+          *ngFor="let item of paginatedAdmissions(); trackBy: trackById"
+          [id]="'admission-' + item.id"
+          (click)="openDetail(item)"
+        >
+          <div class="row-card__left">
+
+            <div class="school-logo" *ngIf="item.image; else noCardImage">
+              <img [src]="item.image!" [alt]="item.school" />
+            </div>
+
+            <ng-template #noCardImage>
+              <div class="school-logo school-logo--empty">
+                {{ item.school.slice(0, 1) }}
+              </div>
+            </ng-template>
+
+          </div>
+
+          <div class="row-card__right">
+
+            <div class="row-card__top">
+              <span
+                class="status-badge"
+                [class.open]="item.status === 'Đang mở'"
+                [class.soon]="item.status === 'Sắp mở'"
+                [class.closed]="item.status === 'Đã đóng'"
+              >
+                {{ item.status }}
+              </span>
+            </div>
+
+            <div class="school-name">{{ item.school }}</div>
+
+            <h3>{{ item.program }}</h3>
+
+            <div class="basic-meta">
+
+              <div class="basic-line">
+                <span class="info-label">Địa điểm</span>
+                <span class="info-value">{{ item.location }}</span>
+              </div>
+
+              <div class="basic-line">
+                <span class="info-label">Học phí</span>
+                <span class="info-value">{{ item.tuitionFee }}</span>
+              </div>
+
+              <div class="basic-line">
+                <span class="info-label">Số tín chỉ</span>
+                <span class="info-value">{{ item.credits }}</span>
+              </div>
+
+            </div>
+
+          </div>
+        </article>
+      </div>
+
+      <ng-template #emptyAdmissions>
+        <div class="state-box" *ngIf="!loading() && !error()">
+          Chưa có dữ liệu tuyển sinh phù hợp.
+        </div>
+      </ng-template>
+
+      <!-- PAGINATION -->
+      <div class="admission-pagination" *ngIf="!loading() && !error() && totalPages() > 1">
+        <button
+          type="button"
+          (click)="prevPage()"
+          [disabled]="currentPage() === 1"
+        >
+          Trước
+        </button>
+
+        <button
+          type="button"
+          *ngFor="let page of pageNumbers()"
+          (click)="page !== '...' && goToPage(+page)"
+          [class.active]="page === currentPage()"
+          [class.ellipsis]="page === '...'"
+          [disabled]="page === '...'"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          (click)="nextPage()"
+          [disabled]="currentPage() === totalPages()"
+        >
+          Sau
+        </button>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<!-- ================= POPUP DETAIL ================= -->
+
+<div
+  class="detail-modal"
+  *ngIf="showDetailModal() && selectedAdmission() as selected"
+>
+
+  <div class="detail-modal__backdrop" (click)="closeDetail()"></div>
+
+  <div class="detail-modal__panel">
+
+    <button class="detail-modal__close" (click)="closeDetail()">×</button>
+
+    <div class="detail-modal__content">
+
+      <!-- LEFT -->
+      <div class="detail-left">
+
+        <div class="detail-logo-wrap">
+
+          <div class="detail-logo" *ngIf="selected.image; else noDetailImg">
+            <img [src]="selected.image!" />
+          </div>
+
+          <ng-template #noDetailImg>
+            <div class="detail-logo detail-logo--empty">
+              {{ selected.school.slice(0, 1) }}
+            </div>
+          </ng-template>
+
+        </div>
+
+        <span
+          class="status-badge"
+          [class.open]="selected.status === 'Đang mở'"
+          [class.soon]="selected.status === 'Sắp mở'"
+          [class.closed]="selected.status === 'Đã đóng'"
+        >
+          {{ selected.status }}
+        </span>
+
+        <div class="detail-side-card">
+
+          <span class="detail-label">Liên hệ</span>
+
+          <div class="detail-contact-item">
+            <strong>SĐT</strong>
+            <span>{{ selected.contactPhone || 'Đang cập nhật' }}</span>
+          </div>
+
+          <div class="detail-contact-item">
+            <strong>Email</strong>
+            <span>{{ selected.contactEmail || 'Đang cập nhật' }}</span>
+          </div>
+
+        </div>
+
+        <a
+          *ngIf="selected.registerLink"
+          class="register-btn"
+          [href]="selected.registerLink"
+          target="_blank"
+        >
+          Đăng ký ngay
+        </a>
+
+      </div>
+
+      <!-- RIGHT -->
+      <div class="detail-right">
+
+        <div class="detail-school">{{ selected.school }}</div>
+
+        <h2>{{ selected.program }}</h2>
+
+        <div class="detail-top-grid">
+
+          <div class="detail-mini-card">
+            <span class="detail-label">Thành phố</span>
+            <span class="detail-value">{{ selected.location }}</span>
+          </div>
+
+          <div class="detail-mini-card">
+            <span class="detail-label">Khoảng học phí</span>
+            <span class="detail-value">{{ selected.tuitionFee }}</span>
+          </div>
+
+          <div class="detail-mini-card">
+            <span class="detail-label">Số tín chỉ</span>
+            <span class="detail-value">{{ selected.credits }}</span>
+          </div>
+
+          <div class="detail-mini-card">
+            <span class="detail-label">Hạn nộp hồ sơ</span>
+            <span class="detail-value">
+              {{ selected.deadlineStart }}
+              <ng-container *ngIf="selected.deadlineEnd !== 'Đang cập nhật'">
+                - {{ selected.deadlineEnd }}
+              </ng-container>
+            </span>
+          </div>
+
+        </div>
+
+        <div class="detail-block">
+          <span class="detail-label">Mô tả</span>
+          <p class="detail-text">
+            {{ selected.desc || 'Đang cập nhật' }}
+          </p>
+        </div>
+
+        <div class="detail-block">
+          <span class="detail-label">Phương thức xét tuyển</span>
+          <p class="detail-text">
+            {{ selected.admissionMethod || 'Đang cập nhật' }}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

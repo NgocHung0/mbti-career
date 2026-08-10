@@ -1,0 +1,209 @@
+<div class="interest-result-page">
+  <div class="container">
+    <ng-container *ngIf="isLoading && !interest; else loadedState">
+      <section class="block state-card">
+        <h2>Đang tải kết quả...</h2>
+        <p>Hệ thống đang lấy dữ liệu MBTI và sở thích của bạn.</p>
+      </section>
+    </ng-container>
+
+    <ng-template #loadedState>
+      <ng-container *ngIf="interest; else emptyState">
+        <section class="hero-card">
+          <div class="hero-left">
+            <p class="kicker">KẾT QUẢ GÓI PLUS</p>
+            <h1>{{ mbtiTitle }} ({{ mbtiType }})</h1>
+          </div>
+
+          <div class="type-emoji-box">
+            <img [src]="'/images/emoji2/' + mbtiType + '.png'" [alt]="mbtiType" />
+          </div>
+        </section>
+
+        <section class="content-grid plus-premium-layout">
+          <div class="main-column">
+            <div class="block">
+              <h2>Bản đồ tính cách & sở thích</h2>
+
+              <div class="plus-map-grid">
+                <div class="plus-map-left">
+                  <div class="combo-title">Trục tính cách MBTI</div>
+
+                  <div class="trait-list">
+                    <div class="trait-row" *ngFor="let item of mbtiBars">
+                      <div class="trait-head">
+                        <span>{{ item.left }}</span>
+                        <strong>{{ item.label }}</strong>
+                        <span>{{ item.right }}</span>
+                      </div>
+
+                      <div class="trait-track">
+                        <div class="trait-fill" [style.width.%]="item.percent"></div>
+                      </div>
+
+                      <div class="trait-meta">
+                        {{ item.dominant }} {{ item.percent }}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="plus-map-middle">
+                  <div class="combo-title">Nhóm sở thích nổi bật</div>
+
+                  <div class="interest-bars plus-interest-grid">
+                    <div class="interest-row">
+                      <div class="interest-head">
+                        <span>Sáng tạo</span>
+                        <strong>{{ creativePercent }}%</strong>
+                      </div>
+                      <div class="interest-track">
+                        <div class="interest-fill creative" [style.width.%]="creativePercent"></div>
+                      </div>
+                    </div>
+
+                    <div class="interest-row">
+                      <div class="interest-head">
+                        <span>Phân tích - Công nghệ</span>
+                        <strong>{{ analyticPercent }}%</strong>
+                      </div>
+                      <div class="interest-track">
+                        <div class="interest-fill analytic" [style.width.%]="analyticPercent"></div>
+                      </div>
+                    </div>
+
+                    <div class="interest-row">
+                      <div class="interest-head">
+                        <span>Con người - Giao tiếp</span>
+                        <strong>{{ socialPercent }}%</strong>
+                      </div>
+                      <div class="interest-track">
+                        <div class="interest-fill social" [style.width.%]="socialPercent"></div>
+                      </div>
+                    </div>
+
+                    <div class="interest-row">
+                      <div class="interest-head">
+                        <span>Kinh doanh - Tổ chức</span>
+                        <strong>{{ businessPercent }}%</strong>
+                      </div>
+                      <div class="interest-track">
+                        <div class="interest-fill business" [style.width.%]="businessPercent"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="plus-map-right">
+                  <div class="combo-title">Phân tích sở thích nổi trội</div>
+
+                  <div class="group-analysis plus-vertical" *ngIf="topInterestGroups.length; else noGroupState">
+                    <div class="group-card" *ngFor="let item of topInterestGroups">
+                      <h3>{{ item.label }}</h3>
+                      <p>{{ item.description }}</p>
+                    </div>
+                  </div>
+
+                  <ng-template #noGroupState>
+                    <div class="empty-inline">
+                      Chưa có đủ dữ liệu nhóm sở thích nổi trội để phân tích chi tiết.
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
+            </div>
+
+            <div class="block">
+              <h2>Gợi ý ngành theo MBTI + sở thích</h2>
+
+              <div class="premium-major-grid" *ngIf="topCareers.length; else noCareerState">
+                <div class="premium-major-card" *ngFor="let item of topCareers; let i = index">
+                  <div class="major-top">
+                    <div class="major-rank">#{{ i + 1 }}</div>
+
+                    <div class="major-title-wrap">
+                      <h3>{{ item.name }}</h3>
+                    </div>
+                  </div>
+
+                  <p class="major-desc">{{ item.description }}</p>
+
+                  <ul class="major-reasons">
+                    <li *ngFor="let reason of item.reasons">{{ reason }}</li>
+                  </ul>
+
+                  <div class="career-schools" *ngIf="item.schools.length; else noSchoolInCard">
+                    <div class="school-title">Trường gợi ý</div>
+
+                    <div class="school-logo-list">
+                      <div
+                        class="school-logo-tag"
+                        *ngFor="let school of item.schools"
+                        [class.school-featured]="school.featured"
+                        [title]="school.name"
+                      >
+                        <div class="school-logo-frame">
+                          <img *ngIf="school.imageUrl; else schoolInitial" [src]="school.imageUrl" [alt]="school.name" />
+                          <ng-template #schoolInitial>
+                            <span class="school-initial">{{ school.name ? school.name[0] : 'T' }}</span>
+                          </ng-template>
+                        </div>
+
+                        <div class="school-hover-card">
+                          <div class="hover-logo-box">
+                            <img *ngIf="school.imageUrl; else hoverInitial" [src]="school.imageUrl" [alt]="school.name" />
+                            <ng-template #hoverInitial>
+                              <span class="school-initial">{{ school.name ? school.name[0] : 'T' }}</span>
+                            </ng-template>
+                          </div>
+
+                          <div class="hover-content">
+                            <h4>{{ school.name }}</h4>
+                            <p *ngIf="school.city">{{ school.city }}</p>
+                            <p *ngIf="school.majorName">Ngành: {{ school.majorName }}</p>
+                            <p *ngIf="school.shortDescription">{{ school.shortDescription }}</p>
+                            <p *ngIf="school.featured"><strong>Nhà tài trợ nổi bật</strong></p>
+                            <button type="button" class="view-detail-link" (click)="goToAdmission(school)">
+                              Xem chi tiết
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ng-template #noSchoolInCard>
+                    <p class="school-empty">Chưa có trường gợi ý.</p>
+                  </ng-template>
+                </div>
+              </div>
+
+              <ng-template #noCareerState>
+                <div class="empty-inline">
+                  Chưa có đủ dữ liệu để gợi ý ngành nghề phù hợp.
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </section>
+
+        <div class="bottom-actions">
+          <button type="button" class="btn-light" (click)="redoTest()">Làm lại bài test</button>
+          <a routerLink="/" class="btn-primary">Về trang chủ</a>
+        </div>
+      </ng-container>
+    </ng-template>
+
+    <ng-template #emptyState>
+      <section class="block state-card">
+        <h2>Chưa có dữ liệu kết quả</h2>
+        <p>Hệ thống chưa đọc được kết quả sở thích. Bạn hãy làm lại bài test hoặc tải lại trang sau.</p>
+
+        <div class="bottom-actions align-left">
+          <button type="button" class="btn-light" (click)="redoTest()">Làm lại bài test</button>
+          <a routerLink="/" class="btn-primary">Về trang chủ</a>
+        </div>
+      </section>
+    </ng-template>
+  </div>
+</div>
