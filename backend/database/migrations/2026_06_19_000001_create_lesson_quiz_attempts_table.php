@@ -20,7 +20,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->foreignId('lesson_id')
-                ->constrained('course_lessons')
+                ->constrained('package_lessons')
                 ->cascadeOnDelete();
 
             $table->foreignId('quiz_id')

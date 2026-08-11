@@ -12,13 +12,14 @@ class MbtiQuestion extends Model
     protected $table = 'mbti_questions';
 
     protected $fillable = [
-        'content',
-        'axis',
-        'package_type',
-        'dir_a',
-        'dir_b',
-        'label_a',
-        'label_b',
-        'order',
-    ];
+    'code',
+    'content',
+    'axis',
+    'dir_a',
+    'dir_b',
+    'label_a',
+    'label_b',
+    'order',
+    'is_active',
+];
 }
