@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Database Service (MySQL 8.0)
+  navi-db:
+    image: mysql:8.0
+    container_name: navi-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_DATABASE: navi_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  # Backend Service (Laravel PHP-FPM)
+  navi-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: navi-backend
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - navi-db
+
+  # Web Server Service (Nginx cho Laravel API)
+  navi-webserver:
+    image: nginx:alpine
+    container_name: navi-webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - '8000:80'
+    volumes:
+      - ./backend:/var/www
+      - ./backend/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - navi-backend
+
+volumes:
+  dbdata:
+    driver: local
