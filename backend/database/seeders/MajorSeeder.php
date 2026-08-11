@@ -55,6 +55,14 @@ class MajorSeeder extends Seeder
         ];
 
         foreach ($items as $item) {
+            // Tự động gom các chỉ số vector thành mảng JSON cho cột 'vector'
+            $item['vector'] = [
+                'e' => $item['vector_e'],
+                's' => $item['vector_s'],
+                't' => $item['vector_t'],
+                'j' => $item['vector_j'],
+            ];
+
             Major::updateOrCreate(
                 ['code' => $item['code']],
                 $item
