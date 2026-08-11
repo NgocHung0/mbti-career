@@ -37,5 +37,5 @@ RUN composer install --no-dev --optimize-autoloader
 
 EXPOSE 10000
 
-# Chạy server Laravel listening đúng port của Render
-CMD php artisan migrate:force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# Chạy migrate và khởi động server đúng port của Render
+CMD php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
