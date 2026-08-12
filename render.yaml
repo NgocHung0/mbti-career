@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mbti-backend
+    env: php
+    buildCommand: composer install && php artisan migrate:fresh --seed && php artisan storage:link
+    startCommand: vendor/bin/heroku-php-apache2 public/
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mbti_career
+          property: connectionString
