@@ -1,16 +1,17 @@
 <?php
 
 return [
-  'paths' => ['api/*', 'sanctum/csrf-cookie'],
-  'allowed_methods' => ['*'],
-  'allowed_origins' => [
-    'http://localhost:4200',
-    'http://127.0.0.1:4200',
-    'http://192.168.1.15:4200',
-  ],
-  'allowed_origins_patterns' => [],
-  'allowed_headers' => ['*'],
-  'exposed_headers' => [],
-  'max_age' => 0,
-  'supports_credentials' => true,
+    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'allowed_methods' => ['*'],
+    'allowed_origins' => [
+        'http://localhost:4200',
+        'http://127.0.0.1:4200',
+        'http://192.168.1.15:4200',
+        'https://mbti-career-864j.vercel.app', // Thêm domain Vercel của bạn vào đây
+    ],
+    'allowed_origins_patterns' => [],
+    'allowed_headers' => ['*'],
+    'exposed_headers' => [],
+    'max_age' => 0,
+    'supports_credentials' => true,
 ];
