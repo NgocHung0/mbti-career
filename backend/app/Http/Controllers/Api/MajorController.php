@@ -7,6 +7,9 @@ use App\Models\Major;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Artisan;
 
 class MajorController extends Controller
 {
@@ -204,9 +207,8 @@ class MajorController extends Controller
         ];
     }
 
-    private function decodeJsonArray(
-        mixed $value
-    ): array {
+    private function decodeJsonArray(mixed $value): array
+    {
         for ($i = 0; $i < 3; $i++) {
             if (is_array($value)) {
                 return $value;
@@ -216,54 +218,33 @@ class MajorController extends Controller
                 return (array) $value;
             }
 
-            if (
-                !is_string($value)
-                || trim($value) === ''
-            ) {
+            if (!is_string($value) || trim($value) === '') {
                 return [];
             }
 
-            $decoded = json_decode(
-                $value,
-                true
-            );
+            $decoded = json_decode($value, true);
 
-            if (
-                json_last_error()
-                !== JSON_ERROR_NONE
-            ) {
+            if (json_last_error() !== JSON_ERROR_NONE) {
                 return [];
             }
 
             $value = $decoded;
         }
 
-        return is_array($value)
-            ? $value
-            : [];
+        return is_array($value) ? $value : [];
     }
 
-    private function normalizeProfileKey(
-        mixed $key
-    ): string {
-        $key = Str::ascii(
-            trim((string) $key)
-        );
-
+    private function normalizeProfileKey(mixed $key): string
+    {
+        $key = Str::ascii(trim((string) $key));
         $key = strtoupper($key);
-
-        $key = preg_replace(
-            '/[^A-Z0-9]+/',
-            '_',
-            $key
-        ) ?? '';
+        $key = preg_replace('/[^A-Z0-9]+/', '_', $key) ?? '';
 
         return trim($key, '_');
     }
 
-    private function normalizeProfileLevel(
-        mixed $value
-    ): int {
+    private function normalizeProfileLevel(mixed $value): int
+    {
         if (!is_numeric($value)) {
             return 0;
         }
@@ -275,13 +256,7 @@ class MajorController extends Controller
         }
 
         if ($number <= 3) {
-            return max(
-                0,
-                min(
-                    3,
-                    (int) round($number)
-                )
-            );
+            return max(0, min(3, (int) round($number)));
         }
 
         if ($number >= 75) {
@@ -295,32 +270,19 @@ class MajorController extends Controller
         return 1;
     }
 
-    private function defaultInterestProfile(
-        mixed $input = []
-    ): array {
+    private function defaultInterestProfile(mixed $input = []): array
+    {
         $input = $this->decodeJsonArray($input);
-
         $normalized = [];
 
         foreach ($input as $key => $value) {
-            $normalized[
-                $this->normalizeProfileKey($key)
-            ] = $value;
+            $normalized[$this->normalizeProfileKey($key)] = $value;
         }
 
-        $getValue = function (
-            array $keys
-        ) use ($normalized): int {
+        $getValue = function (array $keys) use ($normalized): int {
             foreach ($keys as $key) {
-                if (
-                    array_key_exists(
-                        $key,
-                        $normalized
-                    )
-                ) {
-                    return $this->normalizeProfileLevel(
-                        $normalized[$key]
-                    );
+                if (array_key_exists($key, $normalized)) {
+                    return $this->normalizeProfileLevel($normalized[$key]);
                 }
             }
 
@@ -328,39 +290,16 @@ class MajorController extends Controller
         };
 
         return [
-            'creative' => $getValue([
-                'CREATIVE',
-                'SANG_TAO',
-            ]),
-
-            'analytic' => $getValue([
-                'ANALYTIC',
-                'ANALYSIS',
-                'PHAN_TICH',
-                'PHAN_TICH_CONG_NGHE',
-            ]),
-
-            'social' => $getValue([
-                'SOCIAL',
-                'XA_HOI',
-                'GIAO_TIEP',
-                'XA_HOI_GIAO_TIEP',
-                'CON_NGUOI_GIAO_TIEP',
-            ]),
-
-            'business' => $getValue([
-                'BUSINESS',
-                'KINH_DOANH',
-                'KINH_DOANH_TO_CHUC',
-            ]),
+            'creative' => $getValue(['CREATIVE', 'SANG_TAO']),
+            'analytic' => $getValue(['ANALYTIC', 'ANALYSIS', 'PHAN_TICH', 'PHAN_TICH_CONG_NGHE']),
+            'social' => $getValue(['SOCIAL', 'XA_HOI', 'GIAO_TIEP', 'XA_HOI_GIAO_TIEP', 'CON_NGUOI_GIAO_TIEP']),
+            'business' => $getValue(['BUSINESS', 'KINH_DOANH', 'KINH_DOANH_TO_CHUC']),
         ];
     }
 
-    private function defaultAbilityProfile(
-        mixed $input = []
-    ): array {
+    private function defaultAbilityProfile(mixed $input = []): array
+    {
         $input = $this->decodeJsonArray($input);
-
         $normalized = [];
 
         if (array_is_list($input)) {
@@ -369,49 +308,25 @@ class MajorController extends Controller
                     continue;
                 }
 
-                $key =
-                    $item['ability_key']
-                    ?? $item['key']
-                    ?? $item['name']
-                    ?? $item['code']
-                    ?? null;
-
-                $value =
-                    $item['weight']
-                    ?? $item['value']
-                    ?? $item['score']
-                    ?? $item['level']
-                    ?? 0;
+                $key = $item['ability_key'] ?? $item['key'] ?? $item['name'] ?? $item['code'] ?? null;
+                $value = $item['weight'] ?? $item['value'] ?? $item['score'] ?? $item['level'] ?? 0;
 
                 if ($key === null) {
                     continue;
                 }
 
-                $normalized[
-                    $this->normalizeProfileKey($key)
-                ] = $value;
+                $normalized[$this->normalizeProfileKey($key)] = $value;
             }
         } else {
             foreach ($input as $key => $value) {
-                $normalized[
-                    $this->normalizeProfileKey($key)
-                ] = $value;
+                $normalized[$this->normalizeProfileKey($key)] = $value;
             }
         }
 
-        $getValue = function (
-            array $keys
-        ) use ($normalized): int {
+        $getValue = function (array $keys) use ($normalized): int {
             foreach ($keys as $key) {
-                if (
-                    array_key_exists(
-                        $key,
-                        $normalized
-                    )
-                ) {
-                    return $this->normalizeProfileLevel(
-                        $normalized[$key]
-                    );
+                if (array_key_exists($key, $normalized)) {
+                    return $this->normalizeProfileLevel($normalized[$key]);
                 }
             }
 
@@ -419,67 +334,16 @@ class MajorController extends Controller
         };
 
         return [
-            'LANGUAGE' => $getValue([
-                'LANGUAGE',
-                'NGON_NGU',
-                'NGON_NGU_DIEN_DAT',
-            ]),
-
-            'LOGIC' => $getValue([
-                'LOGIC',
-                'TU_DUY_LOGIC',
-                'LOGIC_LAP_LUAN',
-            ]),
-
-            'CREATIVE' => $getValue([
-                'CREATIVE',
-                'SANG_TAO',
-            ]),
-
-            'TECH' => $getValue([
-                'TECH',
-                'TECHNOLOGY',
-                'CONG_NGHE',
-            ]),
-
-            'LEADERSHIP' => $getValue([
-                'LEADERSHIP',
-                'LANH_DAO',
-            ]),
-
-            'TEAMWORK' => $getValue([
-                'TEAMWORK',
-                'TEAM_WORK',
-                'LAM_VIEC_NHOM',
-            ]),
-
-            'DETAIL' => $getValue([
-                'DETAIL',
-                'CAREFUL',
-                'DETAIL_CAREFUL',
-                'CHI_TIET',
-                'CAN_THAN',
-                'CHI_TIET_CAN_THAN',
-            ]),
-
-            'ADAPT' => $getValue([
-                'ADAPT',
-                'ADAPTABILITY',
-                'THICH_NGHI',
-                'THICH_UNG',
-            ]),
-
-            'PRACTICAL' => $getValue([
-                'PRACTICAL',
-                'PRACTICE',
-                'THUC_HANH',
-            ]),
-
-            'STRATEGIC' => $getValue([
-                'STRATEGIC',
-                'STRATEGY',
-                'CHIEN_LUOC',
-            ]),
+            'LANGUAGE' => $getValue(['LANGUAGE', 'NGON_NGU', 'NGON_NGU_DIEN_DAT']),
+            'LOGIC' => $getValue(['LOGIC', 'TU_DUY_LOGIC', 'LOGIC_LAP_LUAN']),
+            'CREATIVE' => $getValue(['CREATIVE', 'SANG_TAO']),
+            'TECH' => $getValue(['TECH', 'TECHNOLOGY', 'CONG_NGHE']),
+            'LEADERSHIP' => $getValue(['LEADERSHIP', 'LANH_DAO']),
+            'TEAMWORK' => $getValue(['TEAMWORK', 'TEAM_WORK', 'LAM_VIEC_NHOM']),
+            'DETAIL' => $getValue(['DETAIL', 'CAREFUL', 'DETAIL_CAREFUL', 'CHI_TIET', 'CAN_THAN', 'CHI_TIET_CAN_THAN']),
+            'ADAPT' => $getValue(['ADAPT', 'ADAPTABILITY', 'THICH_NGHI', 'THICH_UNG']),
+            'PRACTICAL' => $getValue(['PRACTICAL', 'PRACTICE', 'THUC_HANH']),
+            'STRATEGIC' => $getValue(['STRATEGIC', 'STRATEGY', 'CHIEN_LUOC']),
         ];
     }
 
@@ -537,6 +401,29 @@ class MajorController extends Controller
 
     public function publicList()
     {
+        // Tự động kiểm tra: Nếu DB có ít hơn 10 ngành, tự nạp dữ liệu từ file database/sql.sql
+        if (Major::count() < 10) {
+            $sqlPath = database_path('sql.sql');
+            if (File::exists($sqlPath)) {
+                $sql = File::get($sqlPath);
+
+                // Chuyển đổi cú pháp MySQL -> PostgreSQL
+                $sql = preg_replace('/`/', '', $sql);
+                $sql = preg_replace('/ENGINE\s*=\s*InnoDB/i', '', $sql);
+                $sql = preg_replace('/AUTO_INCREMENT/i', 'GENERATED BY DEFAULT AS IDENTITY', $sql);
+                $sql = preg_replace('/DEFAULT CHARSET\s*=\s*[a-zA-Z0-9_]+/i', '', $sql);
+                $sql = preg_replace('/COLLATE\s*=\s*[a-zA-Z0-9_]+/i', '', $sql);
+                $sql = preg_replace('/SET\s+FOREIGN_KEY_CHECKS\s*=\s*\d+;/i', '', $sql);
+
+                try {
+                    DB::unprepared($sql);
+                    Artisan::call('storage:link');
+                } catch (\Exception $e) {
+                    // Bỏ qua lỗi nếu bảng đã được dữ liệu bổ sung
+                }
+            }
+        }
+
         $items = Major::query()
             ->where(function ($sub) {
                 $sub->whereNull('status')
