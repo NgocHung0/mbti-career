@@ -43,6 +43,30 @@ export class Majors implements OnInit {
     this.loadMajors();
   }
 
+  /**
+   * Tự động xử lý URL hình ảnh tương thích cả Localhost lẫn Production
+   */
+  getImageUrl(imagePath: string | null | undefined): string {
+    if (!imagePath) return '/images/major-default.png';
+
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const prodBackendDomain = 'https://mbti-career.onrender.com';
+    const localBackendDomain = 'http://localhost:8000'; // Đổi port nếu Laravel local của bạn dùng port khác
+
+    // 1. Trường hợp là URL tuyệt đối (bắt đầu bằng http/https)
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      // Nếu đang chạy trên Vercel/Production nhưng Backend lại trả về localhost (do chưa config APP_URL)
+      if (!isLocalhost && (imagePath.includes('localhost') || imagePath.includes('127.0.0.1'))) {
+        return imagePath.replace(/^https?:\/\/[^\/]+/, prodBackendDomain);
+      }
+      return imagePath;
+    }
+
+    // 2. Trường hợp là đường dẫn tương đối (ví dụ /storage/majors/xxx.png)
+    const baseDomain = isLocalhost ? localBackendDomain : prodBackendDomain;
+    return `${baseDomain}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  }
+
   loadMajors(): void {
     this.loading = true;
     this.error = '';
@@ -79,13 +103,15 @@ export class Majors implements OnInit {
                 tags = item.tags.map((x: any) => String(x).trim()).filter(Boolean);
               }
 
+              const rawImg = item?.image ?? item?.image_url;
+
               return {
                 id: Number(item?.id ?? 0),
                 title: String(item?.name ?? item?.title ?? 'Chưa có tên ngành'),
                 code: String(item?.code ?? ''),
                 group: String(item?.group ?? item?.category ?? 'Ngành nghề'),
                 desc: String(item?.description ?? item?.desc ?? ''),
-                image: String(item?.image ?? item?.image_url ?? '/images/major-default.png'),
+                image: this.getImageUrl(rawImg),
                 prospects: String(item?.career_prospects ?? item?.prospects ?? ''),
                 schools: Array.isArray(item?.top_schools)
                   ? item.top_schools.map((x: any) => String(x))

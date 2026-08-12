@@ -207,13 +207,6 @@ class MajorController extends Controller
     private function decodeJsonArray(
         mixed $value
     ): array {
-        /*
-        * Hỗ trợ:
-        * - Mảng PHP
-        * - Object PHP
-        * - Chuỗi JSON
-        * - JSON bị encode hai lần
-        */
         for ($i = 0; $i < 3; $i++) {
             if (is_array($value)) {
                 return $value;
@@ -253,13 +246,6 @@ class MajorController extends Controller
     private function normalizeProfileKey(
         mixed $key
     ): string {
-        /*
-        * Ví dụ:
-        *
-        * Ngôn ngữ             → NGON_NGU
-        * language             → LANGUAGE
-        * Chi tiết / cẩn thận  → CHI_TIET_CAN_THAN
-        */
         $key = Str::ascii(
             trim((string) $key)
         );
@@ -288,9 +274,6 @@ class MajorController extends Controller
             return 0;
         }
 
-        /*
-        * Dữ liệu hiện tại dùng trọng số 0–3.
-        */
         if ($number <= 3) {
             return max(
                 0,
@@ -301,9 +284,6 @@ class MajorController extends Controller
             );
         }
 
-        /*
-        * Hỗ trợ dữ liệu cũ dạng phần trăm.
-        */
         if ($number >= 75) {
             return 3;
         }
@@ -383,16 +363,6 @@ class MajorController extends Controller
 
         $normalized = [];
 
-        /*
-        * Hỗ trợ dạng:
-        *
-        * [
-        *   {
-        *     "ability_key": "TECH",
-        *     "weight": 3
-        *   }
-        * ]
-        */
         if (array_is_list($input)) {
             foreach ($input as $item) {
                 if (!is_array($item)) {
@@ -422,15 +392,6 @@ class MajorController extends Controller
                 ] = $value;
             }
         } else {
-            /*
-            * Hỗ trợ:
-            *
-            * {
-            *   "LANGUAGE": 2,
-            *   "Ngôn ngữ": 2,
-            *   "language": 2
-            * }
-            */
             foreach ($input as $key => $value) {
                 $normalized[
                     $this->normalizeProfileKey($key)

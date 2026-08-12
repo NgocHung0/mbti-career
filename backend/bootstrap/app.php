@@ -12,22 +12,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-
         $middleware->redirectGuestsTo(function () {
             return null; // KHÔNG redirect login cho API
         });
 
-        // Đăng ký Class Middleware vừa tạo
+        // Áp dụng CORS Middleware cho toàn bộ ứng dụng
         $middleware->append(\App\Http\Middleware\Cors::class);
-
     })
     ->withExceptions(function (Exceptions $exceptions) {
-
         $exceptions->render(function (Illuminate\Auth\AuthenticationException $e, $request) {
             return response()->json([
                 'message' => 'Unauthenticated'
             ], 401);
         });
-
     })
     ->create();
