@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist/mbti-career/browser",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/frontend/browser",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
